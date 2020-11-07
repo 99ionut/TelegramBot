@@ -1,19 +1,27 @@
 import telebot
 
+#ROBA UTILE         
+# bot.send_message(message.chat.id, '$_My_ads')
 
+### DOCUMENTATION
+###
+###
+###
+###
+
+#Bot's token
 token = '1315794495:AAHz5CVPLTqUE3OoTFaXe54ZmrMHHZjL1Rk'
 
+#Create the bot
 bot = telebot.TeleBot(token)
-bot.delete_webhook()
 
+soldi = 0
+
+#onStart
 @bot.message_handler(commands=['start'])
 def start_message(message):
-    keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('🖥 Visit sites', '💰 Balance')
-    keyboard.add('🙌 Referrals', '⚙ Settings')
-    keyboard.add('📊 My ads')
-    bot.send_message(message.chat.id, '🔥 Welcome to *EARN DOGE Today* Bot! 🔥 \n\nThis bot lets you earn Dogecoin by completing simple tasks. \n\nPress 🖥 *Visit sites* to earn by clicking links Press \n\nYou can also create your own ads with /newad. Use the /help command for more info.',  parse_mode= 'Markdown', reply_markup=keyboard)
-
+    #Show the keyboard buttons
+    startMenu(message)
 
 @bot.message_handler(commands=['test'])
 def start_message(message):
@@ -28,19 +36,27 @@ def start_message(message):
         message.chat.id, text="How much is 2 plus 2?", reply_markup=markup)
 
 
+#onTextReceived/ButtonPressedFromTheKeyboard
 @bot.message_handler(content_types=['text'])
 def send_text(message):
-    if message.text.lower() == '🖥 Visit sites':
-        bot.send_message(message.chat.id, '$_visit_sites')
-    elif message.text.lower() == '💰 Balance':
-        bot.send_message(message.chat.id, '$_balance')
-    elif message.text.lower() == '🙌 Referrals':
-        bot.send_message(message.chat.id, '$_referrals')
-    elif message.text.lower() == '⚙ Settings':
-        bot.send_message(message.chat.id, '$_settings')
-    elif message.text.lower() == '📊 My Ads':
-        bot.send_message(message.chat.id, '$_My_ads')
-      
+    if message.text.lower() == '🖥 visit sites':
+        visitSitesMenu(message)
+    elif message.text.lower() == '💰 balance':
+        balanceMenu(message)
+    elif message.text.lower() == '🙌 referrals':
+        pass
+    elif message.text.lower() == '⚙ settings':
+        soldi += 1
+        pass
+    elif message.text.lower() == '📊 my ads':
+        bot.send_message(message.chat.id, soldi)
+        pass
+    elif message.text.lower() == '🏠 menu':
+        startMenu(message)
+    elif message.text.lower() == '💵 withdraw':
+        soldi -= 1
+        bot.send_message(message.chat.id, 'TOLTO')
+        
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -57,4 +73,31 @@ def query_handler(call):
         call.message.chat.id, call.message.message_id)
 
 
+
+
+
+#Menus
+def visitSitesMenu(message):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row('dffsdisit sites', 'sdsdsdf')
+    keyboard.add('🙌 Refsdferrals', '⚙sdsdttings')
+    keyboard.add('📊 Mysdf ads')
+    bot.send_message(message.chat.id,'ciao ssssimone',parse_mode='Markdown', reply_markup=keyboard)
+
+def startMenu(message):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row('🖥 Visit sites', '💰 Balance')
+    keyboard.add('🙌 Referrals', '⚙ Settings')
+    keyboard.add('📊 My ads')
+    bot.send_message(message.chat.id, '🔥 Welcome to *EARN DOGE Today* Bot! 🔥 \n\nThis bot lets you earn Dogecoin by completing simple tasks. \n\nPress 🖥 *Visit sites* to earn by clicking links Press \n\nYou can also create your own ads with /newad. Use the /help command for more info.',  parse_mode= 'Markdown', reply_markup=keyboard)
+
+def balanceMenu(message):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row('➕ Deposit', '💵 Withdraw')
+    keyboard.add('💰Balance', '🕑 History')
+    keyboard.add('🏠 Menu')
+    bot.send_message(message.chat.id,'Avabile balance: balance dell user',parse_mode='Markdown', reply_markup=keyboard)
+
+
+#waitForUserInteraction
 bot.polling()
