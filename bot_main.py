@@ -1,5 +1,6 @@
 import telebot
 import mysql.connector
+from block_io import BlockIo
 
 # ROBA UTILE
 # bot.send_message(message.chat.id, '$_My_ads')
@@ -10,25 +11,31 @@ import mysql.connector
 ###
 ###
 
+#Crypto API token
+version = 2
+block_io = BlockIo('e5f8-e6fd-ef17-bdca', 'telegrambot', version)
 # Bot's token
 token = '1315794495:AAHz5CVPLTqUE3OoTFaXe54ZmrMHHZjL1Rk'
 
 # Create the bot
 bot = telebot.TeleBot(token)
 
-soldi = 0
 #user chat id
 chatId = 0
-
+#user address
+userAddress = 0
+userBalance = 11
 
 # onStart
 @bot.message_handler(commands=['start'])
 def start_message(message):
     # Show the keyboard buttons
     chatId = message.chat.id
-    if checkUserId(chatId) == 1: #if user id is already inserted...
+    if checkUserId(chatId) == 1: #if user id is new insert...
         print("user inserted")
-        insertUser(chatId)
+        userAddress = block_io.get_new_address(label=chatId)
+        print(userAddress["data"]["address"])
+        insertUser(chatId, userAddress["data"]["address"])
     else:
         print("user not inserted")
         pass
@@ -106,13 +113,13 @@ def startMenu(message):
 def balanceMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row('➕ Deposit', '💵 Withdraw')
-    keyboard.add('💰Balance', '🕑 History')
+    keyboard.add('💰 Balance', '🕑 History')
     keyboard.add('🏠 Menu')
-    bot.send_message(message.chat.id, 'Avabile balance: balance dell user', parse_mode='Markdown',
+    bot.send_message(message.chat.id, "Available balance: *"+str(getUserBalance(message.chat.id))+" DOGE*", parse_mode='Markdown',
                      reply_markup=keyboard)
 
 #inserts new user in the DB
-def insertUser(chatId):
+def insertUser(chatId,userAddress):
     mydb = mysql.connector.connect(
         host="localhost",
         user="telegrambot",
@@ -123,16 +130,14 @@ def insertUser(chatId):
     mycursor = mydb.cursor()
 
     sql = "INSERT INTO user (userId, referral, address, taskAlert, seeNsfw) VALUES (%s, %s, %s, %s, %s)"
-    val = (chatId, chatId, 111, 1, 1)
+    val = (chatId, chatId, userAddress, 1, 1)
     mycursor.execute(sql, val)
-
     mydb.commit()
-
     print(mycursor.rowcount, "record inserted.")
 
 #check if user is already inserted in the DB
 def checkUserId(chatId):
-    print("chech user id")
+    print("check user id")
     mydb = mysql.connector.connect(
         host="localhost",
         user="telegrambot",
@@ -151,7 +156,12 @@ def checkUserId(chatId):
         print("user is new")
         return 1
 
-
+def getUserBalance(chatId):
+    print("check user balance")
+    balance = block_io.get_address_by(label=chatId)["data"]["available_balance"]
+    print(balance)
+    return balance
+    #print("balance = %s" % balance["data"]["available_balance"])
 
 # waitForUserInteraction
 bot.polling()
