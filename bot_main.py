@@ -1,3 +1,4 @@
+#!/usr/bin/python 
 import telebot
 from block_io import BlockIo
 import string
@@ -16,13 +17,17 @@ token = '1315794495:AAHz5CVPLTqUE3OoTFaXe54ZmrMHHZjL1Rk'
 # Create the bot
 bot = telebot.TeleBot(token)
 
+slowest = 0.035
+faster = 0.038
+fastest = 0.789
 
 # onStart
 @bot.message_handler(commands=['start'])
 def start_message(message):
-    print(message.text.replace('/start ',''))
+    print(message)
+    print(message.text.replace('/start ', ''))
     chatId = message.chat.id
-    if checkUserId(chatId) == 1: #if user id is new insert...
+    if checkUserId(chatId) == 1:  # if user id is new insert
         print("user inserted")
         userAddress = block_io.get_new_address(label=chatId)
         print(userAddress["data"]["address"])
@@ -34,8 +39,8 @@ def start_message(message):
     startMenu(message)
 
 
-#@bot.message_handler(commands=['test'])
-#def start_message(message):
+# @bot.message_handler(commands=['test'])
+# def start_message(message):
 #    markup = telebot.types.InlineKeyboardMarkup()
 #    markup.add(telebot.types.InlineKeyboardButton(
 #        text='Three', callback_data=3))
@@ -61,9 +66,6 @@ def start_message(message):
 #    bot.edit_message_reply_markup(
 #        call.message.chat.id, call.message.message_id)
 
-
-
-
 # onTextReceived/ButtonPressedFromTheKeyboard
 @bot.message_handler(content_types=['text'])
 def send_text(message):
@@ -88,7 +90,7 @@ def send_text(message):
     elif message.text.lower() == '❌ cancel':
         cancelWithdrawMenu(message)
     elif message.text.lower() == '➕ new ad':
-        createAdCampagin(message)
+        createAdCampaign(message)
 
 
 
@@ -124,7 +126,7 @@ def createReferralCode(message):
     mycursor.execute('UPDATE user SET referral = \"'+ result_str +'\"  WHERE userId = '+ str(message.chat.id))
     connector.commit()
 
-    print("referral code inserted = "+ result_str)
+    print("referral code inserted = " + result_str)
 
 def referralMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -163,72 +165,186 @@ def adsMenu(message):
                 adsString = ""
 
 def createAdCampaign(message):
-    mycursor = connector.cursor()
-    mycursor.execute('INSERT INTO adcampaign VALUES('','','','','','')')
-    connector.commit()
-
-    campaignID | userID | title | description | budget
-
-    12(A I)           33112     ''        ''           ''
-
-    GET ultimo campaignID where userid == 
-
-    12          33214         
-
-    12          33214     dfsdf        sdfsdfs         10
-
-
+    #SELECT MAX(campaignId), clicks, cpc, dailyBudget, description, nsfw, status, title, url, userId
+    #FROM adcampaign
+    #WHERE userId = 626602519   
+     
+    print('created new campaign')
 
     mycursor = connector.cursor()
-    mycursor.execute('UPDATE adcampaign SET userId = '+ message.chat.id +' WHERE campaignId = ' + str(message.chat.id))
+    mycursor.execute('INSERT INTO adcampaign(userId) VALUES('+str(message.chat.id)+')')
     connector.commit()
 
-def newAdUrlMenu(message):
+    mycursor = connector.cursor()
+    mycursor.execute("SELECT MAX(campaignId) FROM adcampaign WHERE userId = " + str(message.chat.id))
+    myresult = mycursor.fetchall()
+    maxid = myresult[0][0]
+
+    print('max campaign id = ' + str(maxid))
+    newAdUrlMenu(message,maxid)
+
+def newAdUrlMenu(message,maxid):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row('❌ Cancel')
-    print(message)
     url = bot.send_message(message.chat.id, "Enter the URL to send traffic to: \n\nIt should begin with https:// or http://", parse_mode='Markdown',
                      reply_markup=keyboard)
-    bot.register_next_step_handler(message=url, callback=addUrl)
+    bot.register_next_step_handler(message=url,maxid=maxid, callback=addUrl)
 
+def addUrl(message,maxid):
+    # if the url is with http:// or https://
+    if(message.text[0:7] == "http://" or message.text[0:8] == "https://"):
+
+        mycursor = connector.cursor()  
+        mycursor.execute('UPDATE adcampaign SET url = \'' + str(message.text) + '\' WHERE campaignId = ' + str(maxid))
+        connector.commit()
+        newAdTitleMenu(message,maxid)
+    else:
+        newAdUrlMenu(message,maxid)
    
-def newAdTitleMenu(message):
+def newAdTitleMenu(message,maxid):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('Skip','❌ Cancel')
+    keyboard.row('⏭️ Skip','❌ Cancel')
     title = bot.send_message(message.chat.id, "Enter a title for your ad: \n\nIt must be between *5* and *80* characters. \n\nPress \"Skip\" to use the site's title for this ad.", parse_mode='Markdown',
                      reply_markup=keyboard)
-    bot.register_next_step_handler(message=title, callback=addTitle)
+    bot.register_next_step_handler(message=title, maxid=maxid, callback=addTitle)
 
-def newAdDescriptionMenu(message):
+def addTitle(message,maxid):
+    # if the title is between 5 and 80 characters
+    if(len(str(message.text))>=5 and len(str(message.text))<=80):
+
+        mycursor = connector.cursor()  
+        mycursor.execute('UPDATE adcampaign SET title = \'' + str(message.text) + '\' WHERE campaignId = ' + str(maxid))
+        connector.commit()
+        newAdDescriptionMenu(message,maxid)
+    else:
+        newAdTitleMenu(message,maxid)
+
+def newAdDescriptionMenu(message,maxid):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('Skip','❌ Cancel')
+    keyboard.row('⏭️ Skip','❌ Cancel')
     title = bot.send_message(message.chat.id, "Enter a description for your ad:\n\nIt must be between *10* and *180* characters. \n\nPress \"Skip\" to use the site's title for this ad.", parse_mode='Markdown',
                      reply_markup=keyboard)
-    bot.register_next_step_handler(message=title, callback=addTitle)
+    bot.register_next_step_handler(message=title,maxid=maxid, callback=addDescription)
 
+def addDescription(message,maxid):
+    # if the description is between 10 and 180 characters
+    if(len(str(message.text))>=10 and len(str(message.text))<=180):
 
-def addUrl(message):
-    # if the url is with http:// or https://
-    if(message.text[0:6] == "http://" or message.text[0:7] == "https://"):
-        # Query for adding the url to the db
-        mycursor = connector.cursor()
-
-        
-
-        mycursor.execute('UPDATE adcampaign SET url = '+ +' WHERE userId = ' + str(message.chat.id))
+        mycursor = connector.cursor()  
+        mycursor.execute('UPDATE adcampaign SET description = \'' + str(message.text) + '\' WHERE campaignId = ' + str(maxid))
         connector.commit()
-
-        newAdTitleMenu()
-
-    # else return to current section for a wrong url submitted
+        newAdNsfwMenu(message,maxid)
     else:
-        newAdUrlMenu()
-        
-        
+        newAdDescriptionMenu(message,maxid)
 
-def addTitle(message):
-    if(message.text == "Skip"):
-        
+def newAdNsfwMenu(message,maxid):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row('✔️ Yes','🚫 No')
+    keyboard.row('❌ Cancel')
+    title = bot.send_message(message.chat.id, "Does your advertisement contain *pornographic / NSFW* content?", parse_mode='Markdown',
+                     reply_markup=keyboard)
+    bot.register_next_step_handler(message=title,maxid=maxid, callback=addNsfw)
+
+def addNsfw(message,maxid):
+    # if the description is between 10 and 180 characters
+    if(message.text == '✔️ Yes'):
+        mycursor = connector.cursor()  
+        mycursor.execute('UPDATE adcampaign SET nsfw = 1 WHERE campaignId = ' + str(maxid))
+        connector.commit()
+        newAdCpcMenu(message,maxid)
+    elif(message.text == '🚫 No'):
+        mycursor = connector.cursor()  
+        mycursor.execute('UPDATE adcampaign SET nsfw = 0 WHERE campaignId = ' + str(maxid))
+        connector.commit()
+        newAdCpcMenu(message,maxid)      
+    else:
+        addNsfw(message,maxid)
+
+def newAdGeotargetingMenu(message,maxid):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row('✔️ Yes','🚫 No')
+    keyboard.row('❌ Cancel')
+    title = bot.send_message(message.chat.id, "Do you want to use Geotargeting? 🌍\n\n If enabled, only users from certain countries will see your ad." , parse_mode='Markdown', reply_markup=keyboard)
+    bot.register_next_step_handler(message=title,maxid=maxid, callback=addNsfw)
+
+def addGeotargeting(message,maxid):
+    # if the description is between 10 and 180 characters
+    if(message.text == '✔️ Yes'):
+        newAdGeotargetingMenuAccept(message,maxid)
+    elif(message.text == '🚫 No'):
+        newAdCpcMenu(message,maxid)      
+    else:
+        addNsfw(message,maxid)
+
+def newAdGeotargetingMenuAccept(message,maxid):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row('❌ Cancel')   
+    title = bot.send_message(message.chat.id, "Enter the two character country code(s) you want to target your ad to, separated by commas: \n\nExample: US, DE, GB, FR \n\nFor a list of countries click here (https://dogeclick.com/countries)." , parse_mode='Markdown', reply_markup=keyboard)
+    bot.register_next_step_handler(message=title,maxid=maxid, callback= addAcceptGeotargeting )
+
+def addAcceptGeotargeting(message,maxid):
+    
+    #insert into db
+    newAdCpcMenu(message,maxid)
+    pass
+    
+
+def newAdCpcMenu(message,maxid):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    #usare qualche variabile globale cosi se cambi quella cambia pure qui
+    keyboard.row(str(slowest)+'DOGE(slowest)',str(faster)+'DOGE(faster)',str(fastest)+'DOGE(fastest)')
+    keyboard.row('❌ Cancel')
+    title = bot.send_message(message.chat.id, "What is the most you want to pay *per click?* \n\nThe higher your cost per click, the faster people will see your ad. \n\nThe minimum amount is *0.035 DOGE*.\n\nEnter a value in DOGE:", parse_mode='Markdown',
+                     reply_markup=keyboard)
+    bot.register_next_step_handler(message=title,maxid=maxid, callback=addCpc)
+
+def addCpc(message,maxid):
+    # if the description is between 10 and 180 characters
+    if(str(message.text) == str(slowest)+'DOGE(slowest)'):
+        mycursor = connector.cursor()  
+        mycursor.execute('UPDATE adcampaign SET cpc = \'' + str(slowest) + '\' WHERE campaignId = ' + str(maxid))
+        connector.commit()
+        newDailyBudgetMenu(message,maxid)
+    elif(str(message.text) == str(faster)+'DOGE(faster)'):
+        mycursor = connector.cursor()  
+        mycursor.execute('UPDATE adcampaign SET cpc = \'' + str(faster) + '\' WHERE campaignId = ' + str(maxid))
+        connector.commit()
+        newDailyBudgetMenu(message,maxid)
+    elif(str(message.text) == str(fastest)+'DOGE(fastest)'):
+        mycursor = connector.cursor()  
+        mycursor.execute('UPDATE adcampaign SET cpc = \'' + str(fastest) + '\' WHERE campaignId = ' + str(maxid))
+        connector.commit()
+        newDailyBudgetMenu(message,maxid)
+    else:
+        newAdCpcMenu(message,maxid)
+
+def newDailyBudgetMenu(message,maxid):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    #usare qualche variabile globale cosi se cambi quella cambia pure qui
+    keyboard.row('29 DOGE($0.10)','74 DOGE($0.25)')
+    keyboard.row('❌ Cancel')
+    #usare qualche variabile globale per min amount
+    title = bot.send_message(message.chat.id, "How much do you want to spend per day?\n\nThe minimum amount is 0.59 DOGE.\n\nEnter a value in DOGE:", parse_mode='Markdown',
+                     reply_markup=keyboard)
+    bot.register_next_step_handler(message=title,maxid=maxid, callback=addDailyBudget)
+
+def addDailyBudget(message,maxid):
+    showInsertedAd(message,maxid)
+    #inserisci nel db
+    pass
+
+def showInsertedAd(message,maxid):
+    #matita edit, checkmark enabled
+
+    #edit title, edit descript
+    #edit url, edit geotag
+    #...
+    #back, delete
+    #new ad, my ads, home
+
+    #after earch press it brings you to the "new+ +Menu"
+    #then it says Your ad has been updated.
+
     pass
 
 
@@ -465,3 +581,4 @@ def enableNsfw(chatId):
 
 # waitForUserInteraction
 bot.polling()
+
