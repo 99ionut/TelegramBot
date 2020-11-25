@@ -4,26 +4,44 @@ from block_io import BlockIo
 import string
 import random
 import dbConnector
+from pycoingecko import CoinGeckoAPI
 
 # DB CONNECTOR SINGLETON
 connector = dbConnector.connect()
 
 # Crypto API token
 version = 2
-block_io = BlockIo('b239-c199-7b18-9ee9', 'telegrambot', version)
+block_io = BlockIo('6c91-218b-37d0-5c1a', 'telegrambot', version)
+
 # Bot's token
 token = '1315794495:AAHz5CVPLTqUE3OoTFaXe54ZmrMHHZjL1Rk'
 
 # Create the bot
 bot = telebot.TeleBot(token)
 
-slowest = 0.035
-faster = 0.038
-fastest = 0.789
+
+def getDogePrice():
+    price = CoinGeckoAPI().get_price(ids='dogecoin', vs_currencies='usd')['dogecoin']['usd']
+    return price
+
+#cpc
+minamount = 0.0001/getDogePrice()
+slowest = 0.0001/getDogePrice()
+faster = 0.0005/getDogePrice()
+fastest = 0.0015/getDogePrice()
+maxamount = 0.1/getDogePrice()
+#daily budget
+cents10 = 0.10/getDogePrice()
+cents25 = 0.25/getDogePrice()
+cents100 = 1/getDogePrice()
+cents200 = 2/getDogePrice()
+cents500 = 5/getDogePrice()
+cents1000 = 10/getDogePrice()
 
 # onStart
 @bot.message_handler(commands=['start'])
 def start_message(message):
+
     print(message)
     print(message.text.replace('/start ', ''))
     chatId = message.chat.id
@@ -50,9 +68,6 @@ def start_message(message):
 #        text='Five', callback_data=5))
 #    bot.send_message(
 #        message.chat.id, text="How much is 2 plus 2?", reply_markup=markup)
-
-
-
 
 #@bot.callback_query_handler(func=lambda call: True)
 #def query_handler(call):
@@ -91,8 +106,6 @@ def send_text(message):
         cancelWithdrawMenu(message)
     elif message.text.lower() == '➕ new ad':
         createAdCampaign(message)
-
-
 
 
 # Menus
@@ -292,25 +305,25 @@ def addAcceptGeotargeting(message,maxid):
 def newAdCpcMenu(message,maxid):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     #usare qualche variabile globale cosi se cambi quella cambia pure qui
-    keyboard.row(str(slowest)+'DOGE(slowest)',str(faster)+'DOGE(faster)',str(fastest)+'DOGE(fastest)')
+    keyboard.row(str(slowest)[0:5]+'DOGE(slowest)',str(faster)[0:5]+'DOGE(faster)',str(fastest)[0:5]+'DOGE(fastest)')
     keyboard.row('❌ Cancel')
-    title = bot.send_message(message.chat.id, "What is the most you want to pay *per click?* \n\nThe higher your cost per click, the faster people will see your ad. \n\nThe minimum amount is *0.035 DOGE*.\n\nEnter a value in DOGE:", parse_mode='Markdown',
+    title = bot.send_message(message.chat.id, "What is the most you want to pay *per click?* \n\nThe higher your cost per click, the faster people will see your ad. \n\nThe minimum amount is *"+str(minamount) +"*.\n\nEnter a value in DOGE:", parse_mode='Markdown',
                      reply_markup=keyboard)
     bot.register_next_step_handler(message=title,maxid=maxid, callback=addCpc)
 
 def addCpc(message,maxid):
     # if the description is between 10 and 180 characters
-    if(str(message.text) == str(slowest)+'DOGE(slowest)'):
+    if(str(message.text) == str(slowest)[0:5]+'DOGE(slowest)'):
         mycursor = connector.cursor()  
         mycursor.execute('UPDATE adcampaign SET cpc = \'' + str(slowest) + '\' WHERE campaignId = ' + str(maxid))
         connector.commit()
         newDailyBudgetMenu(message,maxid)
-    elif(str(message.text) == str(faster)+'DOGE(faster)'):
+    elif(str(message.text) == str(faster)[0:5]+'DOGE(faster)'):
         mycursor = connector.cursor()  
         mycursor.execute('UPDATE adcampaign SET cpc = \'' + str(faster) + '\' WHERE campaignId = ' + str(maxid))
         connector.commit()
         newDailyBudgetMenu(message,maxid)
-    elif(str(message.text) == str(fastest)+'DOGE(fastest)'):
+    elif(str(message.text) == str(fastest)[0:5]+'DOGE(fastest)'):
         mycursor = connector.cursor()  
         mycursor.execute('UPDATE adcampaign SET cpc = \'' + str(fastest) + '\' WHERE campaignId = ' + str(maxid))
         connector.commit()
@@ -321,10 +334,11 @@ def addCpc(message,maxid):
 def newDailyBudgetMenu(message,maxid):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     #usare qualche variabile globale cosi se cambi quella cambia pure qui
-    keyboard.row('29 DOGE($0.10)','74 DOGE($0.25)')
+    keyboard.row(str(cents10)[0:5]+'DOGE($0.10)',str(cents25)[0:5]+'DOGE($0.25)',str(cents100)[0:5]+'DOGE($1.00)')
+    keyboard.row(str(cents200)[0:5]+'DOGE($2.00)',str(cents500)[0:5]+'DOGE($5.00)',str(cents1000)[0:5]+'DOGE($10.00)')
     keyboard.row('❌ Cancel')
     #usare qualche variabile globale per min amount
-    title = bot.send_message(message.chat.id, "How much do you want to spend per day?\n\nThe minimum amount is 0.59 DOGE.\n\nEnter a value in DOGE:", parse_mode='Markdown',
+    title = bot.send_message(message.chat.id, "How much do you want to spend per day?\n\nThe minimum amount is "+str(minamount)[0:5]+" DOGE.\n\nEnter a value in DOGE:", parse_mode='Markdown',
                      reply_markup=keyboard)
     bot.register_next_step_handler(message=title,maxid=maxid, callback=addDailyBudget)
 
