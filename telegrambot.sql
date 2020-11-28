@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 28, 2020 at 02:05 PM
+-- Generation Time: Nov 28, 2020 at 11:15 PM
 -- Server version: 10.4.14-MariaDB
 -- PHP Version: 7.2.34
 
@@ -38,17 +38,27 @@ CREATE TABLE `adcampaign` (
   `status` tinyint(1) NOT NULL,
   `url` varchar(512) NOT NULL,
   `username` varchar(128) NOT NULL,
-  `country` varchar(5) DEFAULT NULL
+  `country` varchar(5) DEFAULT NULL,
+  `totalclicks` int(11) NOT NULL,
+  `seconds` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Dumping data for table `adcampaign`
 --
 
-INSERT INTO `adcampaign` (`campaignId`, `title`, `description`, `nsfw`, `clicks`, `cpc`, `dailyBudget`, `status`, `url`, `username`, `country`) VALUES
-(46, 'ppppppppppppppp', 'aaaaaaaaaaaa', 1, 0, 0, 0, 0, 'http://pppppppppppp.com', 'IonutZuZu', NULL),
-(47, 'ttttttttt', 'tttttttttttttt', 1, 0, 0, 0, 0, 'http://ssssssss.com', 'IonutZuZu', NULL),
-(48, 'rrrrrrrrrrrrrrrrrrr', 'rrrrrrrrrrrrrrrrrrrrrrr', 0, 0, 0.0297, 0, 0, 'http://sssssssssssssssss.com', 'IonutZuZu', NULL);
+INSERT INTO `adcampaign` (`campaignId`, `title`, `description`, `nsfw`, `clicks`, `cpc`, `dailyBudget`, `status`, `url`, `username`, `country`, `totalclicks`, `seconds`) VALUES
+(56, 'provatitolo1', 'provadescrizione1', 0, 0, 0.029, 72, 1, 'http://prova1.com', 'IonutZuZu', 'xx', 0, 0),
+(57, 'wwwwwww', 'ssssssssssssssssss', 0, 0, 0.0292, 292, 1, 'http://fffffffffff', 'IonutZuZu', 'xx', 0, 10),
+(58, 'wwwwwwww', 'wwwwwwwwwwww', 0, 0, 0.0291, 1456, 1, 'http://fffffffffffssssss', 'IonutZuZu', 'xx', 0, 10),
+(59, 'aaaaaaa', 'aaaaaaaaaaaaaaaa', 1, 0, 0.0291, 1456, 1, 'http://aaaaaaaaaaaa', 'IonutZuZu', 'xx', 0, 10),
+(60, 'titolo2', 'description2', 1, 0, 0.0292, 292, 1, 'https://addddd2', 'IonutZuZu', 'xx', 0, 10),
+(61, 'titolo3', 'description3', 1, 0, 0.0292, 1462, 1, 'http://titolo3', 'IonutZuZu', 'xx', 0, 10),
+(62, 'rrrrrrr', 'ttttttttt', 1, 1, 1, 22, 1, 'wewewwew', 'wwwwwww', 'ww', 1, 12),
+(63, 'titolo4', 'desssscription4', 1, 0, 0.0292, 1463, 1, 'http://titolo4', 'IonutZuZu', 'xx', 0, 10),
+(64, 'eeeeeeeeee', 'rrrrrrrrrrrrrrrrrr', 1, 0, 0.0294, 73, 1, 'http://www.ggggg.pc', 'IonutZuZu', 'xx', 0, 10),
+(65, 'wwwwww', 'eeeeeeeeeee', 1, 0, 0.443, 2956, 1, 'http://wwwwwww.com', 'IonutZuZu', 'xx', 0, 10),
+(66, 'wwwwwww', 'eeeeeeeeee', 0, 0, 0.148, 1480, 1, 'http://ssssss.com', 'IonutZuZu', 'xx', 0, 10);
 
 -- --------------------------------------------------------
 
@@ -72,7 +82,8 @@ CREATE TABLE `user` (
 --
 
 INSERT INTO `user` (`userId`, `referral`, `taskAlert`, `seeNsfw`, `address`, `referredBy`, `country`, `username`) VALUES
-('626602519', 'bPEKnEKO', 1, 1, '2N5ApERYxn2mWiK584KEb3Y6qZtX9n8YHKp', '', 'en', 'IonutZuZu');
+('626602519', 'bPEKnEKO', 1, 1, '2N5ApERYxn2mWiK584KEb3Y6qZtX9n8YHKp', '', 'en', 'IonutZuZu'),
+('666666', 'eeeeee', 1, 1, 'wwwwwwwww', 'wwwwwwwww', 'ww', 'wwwwwww');
 
 --
 -- Indexes for dumped tables
@@ -100,7 +111,7 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT for table `adcampaign`
 --
 ALTER TABLE `adcampaign`
-  MODIFY `campaignId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+  MODIFY `campaignId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
 
 --
 -- Constraints for dumped tables

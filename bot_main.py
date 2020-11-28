@@ -4,6 +4,7 @@ from block_io import BlockIo
 import string
 import random
 import dbConnector
+import validators
 from pycoingecko import CoinGeckoAPI
 
 # DB CONNECTOR SINGLETON
@@ -51,7 +52,6 @@ bot = telebot.TeleBot(token)
 @bot.message_handler(commands=['start'])
 def start_message(message):
 
-    print(message)
     print(message.text.replace('/start ', ''))
     chatId = message.chat.id
     if checkUserId(message.chat.username) == 1:  # if user id is new insert
@@ -113,6 +113,8 @@ def send_text(message):
         historyMenu(message)
     elif message.text.lower() == '❌ cancel':
         cancelWithdrawMenu(message)
+    elif message.text.lower() == '❌cancel':
+        cancelAdMenu(message)
     elif message.text.lower() == '➕ new ad':
         createAdCampaign(message)
 
@@ -144,11 +146,8 @@ def createReferralCode(message):
     result_str = ''.join(random.choice(letters) for i in range(8))
 
     mycursor = connector.cursor()
-    print('UPDATE user SET referral = \"'+ result_str +'\"  WHERE username = \''+ str(message.chat.username)+'\'')
     mycursor.execute('UPDATE user SET referral = \"'+ result_str +'\"  WHERE username = \''+ str(message.chat.username)+'\'')
     connector.commit()
-
-    print("referral code inserted = " + result_str)
 
 def referralMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -166,188 +165,184 @@ def adsMenu(message):
     keyboard.add('🏠 Menu')
 
     if checkUserAds(message.chat.username) == 0:
-        print("no campaign")
         bot.send_message(message.chat.id, "You don't have any ad campaigns yet.", parse_mode='Markdown',
                      reply_markup=keyboard)
     else:
-        print("yes campaign")
-        print(getUserAds(message.chat.username))
         bot.send_message(message.chat.id, "You currently have *" +str(checkUserAds(message.chat.username))+"* Ads", parse_mode='Markdown',
                          reply_markup=keyboard)
         ads = getUserAds(message.chat.username)
         nrAds = checkUserAds(message.chat.username)
         adsString = ""
-        print("ads are: "+ str(ads))
+        print("ads="+str(ads))
         for i in range(int(nrAds)):
-                adsString = "Title: "+str(ads[i][1])+"\nDescription: "+str(ads[i][2])+\
-                            "\nNSFW: "+str(ads[i][3])+"\nClick: "+str(ads[i][4])+\
-                            "\nCPC: "+str(ads[i][5])+"\nDaily Budget: "+str(ads[i][6])+\
-                            "\nStatus: "+str(ads[i][7])+"\nURL: "+str(ads[i][8])
+                adsString = "*Campaign#"+ str(i) +"* \n\nTitle: *"+str(ads[i][1])+"*\nDescription: "+str(ads[i][2])+\
+                "\nURL: "+str(ads[i][8])+"\nStatus: "+str(ads[i][7])+\
+                "\nCPC: *"+str(ads[i][5])+" DOGE*\nDaily Budget: *"+str(ads[i][6])+" DOGE*"+\
+                "\nClicks: *"+str(ads[i][11])+"* total/ *"+str(ads[i][4])+"* today"
                 bot.send_message(message.chat.id, adsString,parse_mode='Markdown',reply_markup=keyboard)
                 adsString = ""
-#one big query instead of a lot of small ones
-def createAdCampaign(message):
-    #SELECT MAX(campaignId), clicks, cpc, dailyBudget, description, nsfw, status, title, url, userId
-    #FROM adcampaign
-    #WHERE userId = 626602519   
-     
-    print('created new campaign')
 
-    mycursor = connector.cursor()
-    mycursor.execute('INSERT INTO adcampaign(username) VALUES(\''+str(message.chat.username)+'\')')
-    connector.commit()
-
-    mycursor = connector.cursor()
-    mycursor.execute("SELECT MAX(campaignId) FROM adcampaign WHERE username = \'" + str(message.chat.username)+"\'")
-    myresult = mycursor.fetchall()
-    maxid = myresult[0][0]
-
-    print('max campaign id = ' + str(maxid))
-    newAdUrlMenu(message,maxid)
-
-def newAdUrlMenu(message,maxid):
+def cancelAdMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('❌ Cancel')
+    keyboard.row('➕ New ad', '📊 My ads')
+    keyboard.add('🏠 Menu')
+    bot.send_message(message.chat.id, "Your ad has been canceled.", parse_mode='Markdown',reply_markup=keyboard)
+
+def createAdCampaign(message):
+    print('created new campaign')
+    newAdUrlMenu(message)
+
+def newAdUrlMenu(message):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row('❌Cancel')
     url = bot.send_message(message.chat.id, "Enter the URL to send traffic to: \n\nIt should begin with https:// or http://", parse_mode='Markdown',
                      reply_markup=keyboard)
-    bot.register_next_step_handler(message=url,maxid=maxid, callback=addUrl)
+    bot.register_next_step_handler(message=message, callback=addUrl)
 
-def addUrl(message,maxid):
-    # if the url is with http:// or https://
-    if(message.text[0:7] == "http://" or message.text[0:8] == "https://"):
-
-        mycursor = connector.cursor()  
-        mycursor.execute('UPDATE adcampaign SET url = \'' + str(message.text) + '\' WHERE campaignId = ' + str(maxid))
-        connector.commit()
-        newAdTitleMenu(message,maxid)
+def addUrl(message):
+    valid=validators.url(str(message.text))
+    if(valid==True):
+        newAdTitleMenu(message, str(message.text))
     else:
-        newAdUrlMenu(message,maxid)
+        newAdUrlMenu(message)
    
-def newAdTitleMenu(message,maxid):
+def newAdTitleMenu(message,url):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('⏭️ Skip','❌ Cancel')
+    keyboard.row('⏭️ Skip','❌Cancel')
     title = bot.send_message(message.chat.id, "Enter a title for your ad: \n\nIt must be between *5* and *80* characters. \n\nPress \"Skip\" to use the site's title for this ad.", parse_mode='Markdown',
                      reply_markup=keyboard)
-    bot.register_next_step_handler(message=title, maxid=maxid, callback=addTitle)
+    bot.register_next_step_handler(message=message, url=url , callback=addTitle)
 
-def addTitle(message,maxid):
-    # if the title is between 5 and 80 characters
+def addTitle(message,url):
     if(len(str(message.text))>=5 and len(str(message.text))<=80):
-
-        mycursor = connector.cursor()  
-        mycursor.execute('UPDATE adcampaign SET title = \'' + str(message.text) + '\' WHERE campaignId = ' + str(maxid))
-        connector.commit()
-        newAdDescriptionMenu(message,maxid)
+        newAdDescriptionMenu(message,url,str(message.text))
     else:
-        newAdTitleMenu(message,maxid)
+        newAdTitleMenu(message,url)
 
-def newAdDescriptionMenu(message,maxid):
+def newAdDescriptionMenu(message,url,adtitle):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('⏭️ Skip','❌ Cancel')
+    keyboard.row('⏭️ Skip','❌Cancel')
     title = bot.send_message(message.chat.id, "Enter a description for your ad:\n\nIt must be between *10* and *180* characters. \n\nPress \"Skip\" to use the site's title for this ad.", parse_mode='Markdown',
                      reply_markup=keyboard)
-    bot.register_next_step_handler(message=title,maxid=maxid, callback=addDescription)
+    bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, callback=addDescription)
 
-def addDescription(message,maxid):
-    # if the description is between 10 and 180 characters
+def addDescription(message,url,adtitle):
     if(len(str(message.text))>=10 and len(str(message.text))<=180):
-
-        mycursor = connector.cursor()  
-        mycursor.execute('UPDATE adcampaign SET description = \'' + str(message.text) + '\' WHERE campaignId = ' + str(maxid))
-        connector.commit()
-        newAdNsfwMenu(message,maxid)
+        newAdNsfwMenu(message,url,adtitle,str(message.text))
     else:
-        newAdDescriptionMenu(message,maxid)
+        newAdDescriptionMenu(message,url,adtitle)
 
-def newAdNsfwMenu(message,maxid):
+def newAdNsfwMenu(message,url,adtitle,description):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row('✅ Yes','🚫 No')
-    keyboard.row('❌ Cancel')
+    keyboard.row('❌Cancel')
     title = bot.send_message(message.chat.id, "Does your advertisement contain *pornographic / NSFW* content?", parse_mode='Markdown',
                      reply_markup=keyboard)
-    bot.register_next_step_handler(message=title,maxid=maxid, callback=addNsfw)
+    bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, description=description, callback=addNsfw)
 
-def addNsfw(message,maxid):
-    # if the description is between 10 and 180 characters
+def addNsfw(message,url,adtitle,description):
     if(message.text == '✅ Yes'):
-        mycursor = connector.cursor()  
-        mycursor.execute('UPDATE adcampaign SET nsfw = 1 WHERE campaignId = ' + str(maxid))
-        connector.commit()
-        newAdGeotargetingMenu(message,maxid)
+        newAdGeotargetingMenu(message,url,adtitle,description, 1)
     elif(message.text == '🚫 No'):
-        mycursor = connector.cursor()  
-        mycursor.execute('UPDATE adcampaign SET nsfw = 0 WHERE campaignId = ' + str(maxid))
-        connector.commit()
-        newAdGeotargetingMenu(message,maxid)      
+        newAdGeotargetingMenu(message,url,adtitle,description, 0)      
     else:
-        addNsfw(message,maxid)
+        addNsfw(message,url,adtitle,description)
 
-def newAdGeotargetingMenu(message,maxid):
+def newAdGeotargetingMenu(message,url,adtitle,description,nsfw):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row('✅ Yes','🚫 No')
-    keyboard.row('❌ Cancel')
+    keyboard.row('❌Cancel')
     title = bot.send_message(message.chat.id, "Do you want to use Geotargeting? 🌍\n\n If enabled, only users from certain countries will see your ad." , parse_mode='Markdown', reply_markup=keyboard)
-    bot.register_next_step_handler(message=title,maxid=maxid, callback=addGeotargeting)
+    bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, description=description, nsfw=nsfw, callback=addGeotargeting)
 
-def addGeotargeting(message,maxid):
-    # if the description is between 10 and 180 characters
+def addGeotargeting(message,url,adtitle,description,nsfw):
     if(message.text == '✅ Yes'):
-        newAdGeotargetingMenuAccept(message,maxid)
+        newAdGeotargetingMenuAccept(message,url,adtitle,description,nsfw)
     elif(message.text == '🚫 No'):
-        newAdCpcMenu(message,maxid)      
+        newAdCpcMenu(message,url,adtitle,description,nsfw,'xx')      
     else:
-        addNsfw(message,maxid)
+        addGeotargeting(message,url,adtitle,description,nsfw)
 
-def newAdGeotargetingMenuAccept(message,maxid):
+def newAdGeotargetingMenuAccept(message,url,adtitle,description,nsfw):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('❌ Cancel')   
+    keyboard.row('❌Cancel')   
     title = bot.send_message(message.chat.id, "Enter the two character country code(s) you want to target your ad to, separated by commas: \n\nExample: US, DE, GB, FR \n\nFor a list of countries click here (https://dogeclick.com/countries)." , parse_mode='Markdown', reply_markup=keyboard)
-    bot.register_next_step_handler(message=title,maxid=maxid, callback= addAcceptGeotargeting )
+    bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, description=description, nsfw=nsfw,  callback= addAcceptGeotargeting )
 
-def addAcceptGeotargeting(message,maxid):
+def addAcceptGeotargeting(message,url,adtitle,description,nsfw):
+    if(message.text == 'en'):
+        newAdGeotargetingMenuAccept(message,url,adtitle,description,nsfw,'en')
+    else:
+        newAdGeotargetingMenuAccept(message,url,adtitle,description,nsfw)
     
-    pass
-    #if(is in array):
-        #insert in db
-     #   newAdCpcMenu(message,maxid)
-       # else:
-      #      newAdGeotargetingMenuAccept(message,maxid)
-        
-    
-def newAdCpcMenu(message,maxid):
+def newAdCpcMenu(message,url,adtitle,description,nsfw,geotargeting):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row(str(slowest)[0:6]+' DOGE(slowest)',str(faster)[0:6]+' DOGE(faster)',str(fastest)[0:5]+' DOGE(fastest)')
-    keyboard.row('❌ Cancel')
+    keyboard.row('❌Cancel')
     title = bot.send_message(message.chat.id, "What is the most you want to pay *per click?* \n\nThe higher your cost per click, the faster people will see your ad. \n\nThe minimum amount is *"+str(slowest)[0:6] +" DOGE*\n\nEnter a value in DOGE:", parse_mode='Markdown', reply_markup=keyboard)
-    bot.register_next_step_handler(message=title,maxid=maxid, callback=addCpc)
+    bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, description=description, nsfw=nsfw, geotargeting=geotargeting, callback=addCpc)
 
-def addCpc(message,maxid):
-    # if the description is between 10 and 180 characters
-    if(str(message.text)[0:6] >= str(slowest)[0:6] and str(message.text)[0:6] <= str(slowest)[0:6]):
-        mycursor = connector.cursor()  
-        mycursor.execute('UPDATE adcampaign SET cpc = \'' + str(message.text)[0:6] + '\' WHERE campaignId = ' + str(maxid))
-        connector.commit()
-        newDailyBudgetMenu(message,maxid)
+def addCpc(message,url,adtitle,description,nsfw,geotargeting):
+    if(float(str(message.text)[0:6]) >= float(str(slowest)[0:6]) and float(str(message.text)[0:6]) <= float(str(maxamount)[0:6])):
+        newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,message.text)
     else:
-        newAdCpcMenu(message,maxid)
+        newAdCpcMenu(message,url,adtitle,description,nsfw,geotargeting)
 
-def newDailyBudgetMenu(message,maxid):
+def newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,cpc):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    #usare qualche variabile globale cosi se cambi quella cambia pure qui
     keyboard.row(str(cents10).split('.')[0]+' DOGE($0.10)',str(cents25).split('.')[0]+' DOGE($0.25)',str(cents100).split('.')[0]+' DOGE($1.00)')
     keyboard.row(str(cents200).split('.')[0]+' DOGE($2.00)',str(cents500).split('.')[0]+' DOGE($5.00)',str(cents1000).split('.')[0]+' DOGE($10.00)')
-    keyboard.row('❌ Cancel')
-    #usare qualche variabile globale per min amount
+    keyboard.row('❌Cancel')
     title = bot.send_message(message.chat.id, "How much do you want to spend per day?\n\nThe minimum amount is *"+str(slowest)[0:5]+" DOGE*\n\nEnter a value in DOGE:", parse_mode='Markdown',
                      reply_markup=keyboard)
-    bot.register_next_step_handler(message=title,maxid=maxid, callback=addDailyBudget)
+    bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, description=description, nsfw=nsfw, geotargeting=geotargeting, cpc=cpc, callback=addDailyBudget)
 
-def addDailyBudget(message,maxid):
-    showInsertedAd(message,maxid)
-    #inserisci nel db
-    pass
+def addDailyBudget(message,url,adtitle,description,nsfw,geotargeting,cpc):
+    insertAd(message,url,adtitle,description,nsfw,geotargeting,cpc,str(message.text))
 
-def showInsertedAd(message,maxid):
+def insertAd(message,url,adtitle,description,nsfw,geotargeting,cpc,dailybudget):
+    mycursor = connector.cursor()
+    print('Message = '+str(message))
+    print('url = '+str(url))
+    print('adtitle = '+str(adtitle))
+    print('description = '+str(description))
+    print('nsfw = '+str(nsfw))
+    print('geotargeting = '+str(geotargeting))
+    print('cpc = '+str(cpc))
+    print('dailybudget = '+str(dailybudget))
+    mycursor.execute("INSERT INTO adcampaign(username,url,title,description,nsfw,country,cpc,dailybudget,status,clicks,totalclicks,seconds) VALUES('"+str(message.chat.username)+"','"+str(url)+"','"+str(adtitle)+"','"+str(description)+"','"+str(nsfw)+"','"+str(geotargeting)+"','"+str(cpc)+"','"+str(dailybudget)+"','"+str(1)+"','"+str(0)+"','"+str(0)+"','"+str(10)+"')")
+    connector.commit()
+    showInsertedAd(message)
+
+
+def showInsertedAd(message):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row('➕ New ad', '📊 My ads')
+    keyboard.add('🏠 Menu')
+
+    mycursor = connector.cursor()
+    mycursor.execute("SELECT MAX(campaignId) FROM adcampaign WHERE username = '"+str(message.chat.username)+"'")
+    maxid = mycursor.fetchall()
+
+    mycursor = connector.cursor()
+    mycursor.execute("SELECT COUNT(campaignId) FROM adcampaign WHERE username = '"+ str(message.chat.username) +"' GROUP BY username")
+    countads = mycursor.fetchall()
+
+    mycursor = connector.cursor()
+    mycursor.execute("SELECT title, description, url, status, cpc, dailyBudget, totalclicks, clicks  FROM adcampaign WHERE campaignId = '"+str(maxid[0][0])+"'")
+    ads = mycursor.fetchall()
+
+    print(str(ads))
+    print("showads = "+str(ads))
+
+    adsString = "*Campaign #"+ str(countads[0][0]) +"* \n\nTitle: *"+str(ads[0][0])+"*\nDescription: "+str(ads[0][1])+\
+        "\nURL: "+str(ads[0][2])+"\nStatus: "+str(ads[0][3])+\
+        "\nCPC: *"+str(ads[0][4])+" DOGE*\nDaily Budget: *"+str(ads[0][5])+" DOGE*"+\
+        "\nClicks: *"+str(ads[0][6])+"* total/ *"+str(ads[0][7])+"* today"
+    bot.send_message(message.chat.id, adsString,parse_mode='Markdown',reply_markup=keyboard)
+
     #matita edit, checkmark enabled
 
     #edit title, edit descript
@@ -359,7 +354,6 @@ def showInsertedAd(message,maxid):
     #after earch press it brings you to the "new+ +Menu"
     #then it says Your ad has been updated.
 
-    pass
 
 
 def balanceMenu(message):
@@ -417,7 +411,6 @@ def historyMenu(message):
                      reply_markup=keyboard)
 
 def settingsMenu(message):
-        print("settings")
         nsfw = getNsfw(message.chat.username)
         markup = telebot.types.InlineKeyboardMarkup()
 
@@ -465,12 +458,10 @@ def insertUser(chatId,userAddress,country,username):
     val = (chatId, chatId, userAddress, 1, 1, country, username)
     mycursor.execute(sql, val)
     connector.commit()
-    print(mycursor.rowcount, "record inserted.")
+    print(mycursor.rowcount, " record inserted.")
 
 #check if user is already inserted in the DB
 def checkUserId(username):
-    print("check user id")
-
     mycursor = connector.cursor()
     mycursor.execute("SELECT * FROM user WHERE username = \'" + str(username)+"\'")
     myresult = mycursor.fetchall()
@@ -483,112 +474,80 @@ def checkUserId(username):
         return 1
 
 def checkUserAddress(username):
-    print("check user Address")
-
     mycursor = connector.cursor()
     mycursor.execute("SELECT address FROM user WHERE username = \'" + str(username)+"\'")
     myresult = mycursor.fetchall()
 
     if myresult:
-        print("address exists")
         return myresult[0][0]
     else:
-        print("address doesnt exist")
         return 0
 
 #returns the number of ads of a user
 def checkUserAds(username):
-        print("check user Ads")
-
-        print("username ads = " + str(username))
         mycursor = connector.cursor()
-        print("SELECT COUNT(username) FROM adcampaign WHERE username = \'" + str(username) + "\' GROUP BY username")
         mycursor.execute("SELECT COUNT(username) FROM adcampaign WHERE username = \'" + str(username)+"\' GROUP BY username")
 
         myresult = mycursor.fetchall()
 
         if myresult:
-            print("ads exists")
-            print(myresult)
             return myresult[0][0]
         else:
-            print("ads doesnt exist")
             return 0
 
 def getReferralCode(username):
 
         mycursor = connector.cursor()
         mycursor.execute('SELECT referral FROM user WHERE username = \'' + str(username)+'\'')
-        
-
         myresult = mycursor.fetchall()
 
         if myresult:
             fullReferral = "https://t.me/EarnDogeTodayBot?start="+str(myresult[0][0])
-            print(fullReferral)
             return fullReferral
         else:
-            print("ERROR")
             return 0
 
 def getUserBalance(username):
-    print("check user balance")
     balance = block_io.get_address_by(label=username)["data"]["available_balance"]
     print(balance)
     return str(float(balance))
 
 def getUserAddress(username):
-    print("check user address")
     address = checkUserAddress(username)
     print(address)
     return address
 
 def getUserHistory(username):
-    print("check user history")
     address = getUserAddress(username)
     history = "https://sochain.com/address/DOGETEST/"+address
-    print(history)
     return history
 
 
 
 def getNsfw(username):
-    print("check user Nsfw settings")
-
     mycursor = connector.cursor()
     mycursor.execute("SELECT seeNsfw FROM user WHERE username = \'" + str(username)+'\'')
     myresult = mycursor.fetchall()
 
-    print("risultato check nsfw = " + str(myresult[0][0]))
     if myresult:
-        print("seeNsfw exists")
         return myresult[0][0]
     else:
-        print("seeNsfw doesnt exist")
         return 0
 
 #returns all data of all ads of a user
 def getUserAds(username):
-        print("get all user Ads")
-
         mycursor = connector.cursor()
-        print("SELECT * FROM adcampaign WHERE username = \'" + str(username)+'\'')
         mycursor.execute("SELECT * FROM adcampaign WHERE username = \'" + str(username)+'\'')
 
         myresult = mycursor.fetchall()
         return myresult
 
 def disableNsfw(username):
-    print("disable user Nsfw settings")
-
     mycursor = connector.cursor()
     mycursor.execute("UPDATE user SET seeNsfw = 0 WHERE username = \'" + str(username)+'\'')
     connector.commit()
 
 def enableNsfw(username):
-    print("enable user Nsfw settings")
-    print(username)
-
     mycursor = connector.cursor()
     mycursor.execute("UPDATE user SET seeNsfw = 1 WHERE username = \'" + str(username)+'\'')
     connector.commit()
