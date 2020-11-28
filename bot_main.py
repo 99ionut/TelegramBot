@@ -9,34 +9,43 @@ from pycoingecko import CoinGeckoAPI
 # DB CONNECTOR SINGLETON
 connector = dbConnector.connect()
 
-# Crypto API token
+#BLOCK.IO TOKEN
 version = 2
-block_io = BlockIo('6c91-218b-37d0-5c1a', 'telegrambot', version)
+block_io = BlockIo('60dc-be33-0b2d-4c44', 'telegrambot', version)
 
-# Bot's token
+#BOT TOKEN
 token = '1315794495:AAHz5CVPLTqUE3OoTFaXe54ZmrMHHZjL1Rk'
-
-# Create the bot
-bot = telebot.TeleBot(token)
-
 
 def getDogePrice():
     price = CoinGeckoAPI().get_price(ids='dogecoin', vs_currencies='usd')['dogecoin']['usd']
     return price
 
-#cpc
-minamount = 0.0001/getDogePrice()
+###CPC
+#minimum cpc amount
 slowest = 0.0001/getDogePrice()
 faster = 0.0005/getDogePrice()
 fastest = 0.0015/getDogePrice()
-maxamount = 0.1/getDogePrice()
-#daily budget
-cents10 = 0.10/getDogePrice()
+#maximum cpc amount, must be lower or equal to the dayly budgets minimum amount
+maxamount = 0.09/getDogePrice() 
+
+###DAILY BUDGET (the number on the left doesn't have to be equal to the number on the right, ONLY CHANGE THE NUMBER ON THE RIGHT!)
+#minimum daily budget amount
+cents10 = 0.11/getDogePrice()
 cents25 = 0.25/getDogePrice()
 cents100 = 1/getDogePrice()
 cents200 = 2/getDogePrice()
 cents500 = 5/getDogePrice()
 cents1000 = 10/getDogePrice()
+#maximum daily budget amount
+cents500000 = 500/getDogePrice()
+
+###COUNTRIES
+countries = ["en","it","id","sg","ru","ng","de","vn","nl","ph","in","ve","gb","br","au","fi","fr","jp","no","my","tr","co","ch","ca","mx","ar","ua","es","md","eg","bd","mn","cu","th","it","ir"]
+
+# Create the bot
+bot = telebot.TeleBot(token)
+
+
 
 # onStart
 @bot.message_handler(commands=['start'])
@@ -45,11 +54,11 @@ def start_message(message):
     print(message)
     print(message.text.replace('/start ', ''))
     chatId = message.chat.id
-    if checkUserId(chatId) == 1:  # if user id is new insert
+    if checkUserId(message.chat.username) == 1:  # if user id is new insert
         print("user inserted")
-        userAddress = block_io.get_new_address(label=chatId)
+        userAddress = block_io.get_new_address(label=message.chat.username)
         print(userAddress["data"]["address"])
-        insertUser(chatId, userAddress["data"]["address"])
+        insertUser(chatId, userAddress["data"]["address"],message.from_user.language_code, message.chat.username)
         createReferralCode(message)
     else:
         print("user not inserted")
@@ -135,8 +144,8 @@ def createReferralCode(message):
     result_str = ''.join(random.choice(letters) for i in range(8))
 
     mycursor = connector.cursor()
-    print('UPDATE user SET referral = \"'+ result_str +'\"  WHERE userId = '+ str(message.chat.id))
-    mycursor.execute('UPDATE user SET referral = \"'+ result_str +'\"  WHERE userId = '+ str(message.chat.id))
+    print('UPDATE user SET referral = \"'+ result_str +'\"  WHERE username = \''+ str(message.chat.username)+'\'')
+    mycursor.execute('UPDATE user SET referral = \"'+ result_str +'\"  WHERE username = \''+ str(message.chat.username)+'\'')
     connector.commit()
 
     print("referral code inserted = " + result_str)
@@ -148,7 +157,7 @@ def referralMenu(message):
     keyboard.add('📊 My ads')
 
     bot.send_message(message.chat.id,
-                    'You have *0* referrals, and earned *0* DOGE. \nTo refer people, send them to: \n\n'+getReferralCode(message.chat.id)+' \n\nYou will earn *15%* of each user\'s earnings from tasks, and *1%* of DOGE they spend on ads.',
+                    'You have *0* referrals, and earned *0* DOGE. \nTo refer people, send them to: \n\n'+getReferralCode(message.chat.username)+' \n\nYou will earn *15%* of each user\'s earnings from tasks, and *1%* of DOGE they spend on ads.',
                     parse_mode='Markdown', reply_markup=keyboard)
 
 def adsMenu(message):
@@ -156,17 +165,17 @@ def adsMenu(message):
     keyboard.row('➕ New ad', '📊 My ads')
     keyboard.add('🏠 Menu')
 
-    if checkUserAds(message.chat.id) == 0:
+    if checkUserAds(message.chat.username) == 0:
         print("no campaign")
         bot.send_message(message.chat.id, "You don't have any ad campaigns yet.", parse_mode='Markdown',
                      reply_markup=keyboard)
     else:
         print("yes campaign")
-        print(getUserAds(message.chat.id))
-        bot.send_message(message.chat.id, "You currently have *" +str(checkUserAds(message.chat.id))+"* Ads", parse_mode='Markdown',
+        print(getUserAds(message.chat.username))
+        bot.send_message(message.chat.id, "You currently have *" +str(checkUserAds(message.chat.username))+"* Ads", parse_mode='Markdown',
                          reply_markup=keyboard)
-        ads = getUserAds(message.chat.id)
-        nrAds = checkUserAds(message.chat.id)
+        ads = getUserAds(message.chat.username)
+        nrAds = checkUserAds(message.chat.username)
         adsString = ""
         print("ads are: "+ str(ads))
         for i in range(int(nrAds)):
@@ -176,7 +185,7 @@ def adsMenu(message):
                             "\nStatus: "+str(ads[i][7])+"\nURL: "+str(ads[i][8])
                 bot.send_message(message.chat.id, adsString,parse_mode='Markdown',reply_markup=keyboard)
                 adsString = ""
-
+#one big query instead of a lot of small ones
 def createAdCampaign(message):
     #SELECT MAX(campaignId), clicks, cpc, dailyBudget, description, nsfw, status, title, url, userId
     #FROM adcampaign
@@ -185,11 +194,11 @@ def createAdCampaign(message):
     print('created new campaign')
 
     mycursor = connector.cursor()
-    mycursor.execute('INSERT INTO adcampaign(userId) VALUES('+str(message.chat.id)+')')
+    mycursor.execute('INSERT INTO adcampaign(username) VALUES(\''+str(message.chat.username)+'\')')
     connector.commit()
 
     mycursor = connector.cursor()
-    mycursor.execute("SELECT MAX(campaignId) FROM adcampaign WHERE userId = " + str(message.chat.id))
+    mycursor.execute("SELECT MAX(campaignId) FROM adcampaign WHERE username = \'" + str(message.chat.username)+"\'")
     myresult = mycursor.fetchall()
     maxid = myresult[0][0]
 
@@ -252,7 +261,7 @@ def addDescription(message,maxid):
 
 def newAdNsfwMenu(message,maxid):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('✔️ Yes','🚫 No')
+    keyboard.row('✅ Yes','🚫 No')
     keyboard.row('❌ Cancel')
     title = bot.send_message(message.chat.id, "Does your advertisement contain *pornographic / NSFW* content?", parse_mode='Markdown',
                      reply_markup=keyboard)
@@ -260,29 +269,29 @@ def newAdNsfwMenu(message,maxid):
 
 def addNsfw(message,maxid):
     # if the description is between 10 and 180 characters
-    if(message.text == '✔️ Yes'):
+    if(message.text == '✅ Yes'):
         mycursor = connector.cursor()  
         mycursor.execute('UPDATE adcampaign SET nsfw = 1 WHERE campaignId = ' + str(maxid))
         connector.commit()
-        newAdCpcMenu(message,maxid)
+        newAdGeotargetingMenu(message,maxid)
     elif(message.text == '🚫 No'):
         mycursor = connector.cursor()  
         mycursor.execute('UPDATE adcampaign SET nsfw = 0 WHERE campaignId = ' + str(maxid))
         connector.commit()
-        newAdCpcMenu(message,maxid)      
+        newAdGeotargetingMenu(message,maxid)      
     else:
         addNsfw(message,maxid)
 
 def newAdGeotargetingMenu(message,maxid):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('✔️ Yes','🚫 No')
+    keyboard.row('✅ Yes','🚫 No')
     keyboard.row('❌ Cancel')
     title = bot.send_message(message.chat.id, "Do you want to use Geotargeting? 🌍\n\n If enabled, only users from certain countries will see your ad." , parse_mode='Markdown', reply_markup=keyboard)
-    bot.register_next_step_handler(message=title,maxid=maxid, callback=addNsfw)
+    bot.register_next_step_handler(message=title,maxid=maxid, callback=addGeotargeting)
 
 def addGeotargeting(message,maxid):
     # if the description is between 10 and 180 characters
-    if(message.text == '✔️ Yes'):
+    if(message.text == '✅ Yes'):
         newAdGeotargetingMenuAccept(message,maxid)
     elif(message.text == '🚫 No'):
         newAdCpcMenu(message,maxid)      
@@ -297,35 +306,26 @@ def newAdGeotargetingMenuAccept(message,maxid):
 
 def addAcceptGeotargeting(message,maxid):
     
-    #insert into db
-    newAdCpcMenu(message,maxid)
     pass
+    #if(is in array):
+        #insert in db
+     #   newAdCpcMenu(message,maxid)
+       # else:
+      #      newAdGeotargetingMenuAccept(message,maxid)
+        
     
-
 def newAdCpcMenu(message,maxid):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    #usare qualche variabile globale cosi se cambi quella cambia pure qui
-    keyboard.row(str(slowest)[0:5]+'DOGE(slowest)',str(faster)[0:5]+'DOGE(faster)',str(fastest)[0:5]+'DOGE(fastest)')
+    keyboard.row(str(slowest)[0:6]+' DOGE(slowest)',str(faster)[0:6]+' DOGE(faster)',str(fastest)[0:5]+' DOGE(fastest)')
     keyboard.row('❌ Cancel')
-    title = bot.send_message(message.chat.id, "What is the most you want to pay *per click?* \n\nThe higher your cost per click, the faster people will see your ad. \n\nThe minimum amount is *"+str(minamount) +"*.\n\nEnter a value in DOGE:", parse_mode='Markdown',
-                     reply_markup=keyboard)
+    title = bot.send_message(message.chat.id, "What is the most you want to pay *per click?* \n\nThe higher your cost per click, the faster people will see your ad. \n\nThe minimum amount is *"+str(slowest)[0:6] +" DOGE*\n\nEnter a value in DOGE:", parse_mode='Markdown', reply_markup=keyboard)
     bot.register_next_step_handler(message=title,maxid=maxid, callback=addCpc)
 
 def addCpc(message,maxid):
     # if the description is between 10 and 180 characters
-    if(str(message.text) == str(slowest)[0:5]+'DOGE(slowest)'):
+    if(str(message.text)[0:6] >= str(slowest)[0:6] and str(message.text)[0:6] <= str(slowest)[0:6]):
         mycursor = connector.cursor()  
-        mycursor.execute('UPDATE adcampaign SET cpc = \'' + str(slowest) + '\' WHERE campaignId = ' + str(maxid))
-        connector.commit()
-        newDailyBudgetMenu(message,maxid)
-    elif(str(message.text) == str(faster)[0:5]+'DOGE(faster)'):
-        mycursor = connector.cursor()  
-        mycursor.execute('UPDATE adcampaign SET cpc = \'' + str(faster) + '\' WHERE campaignId = ' + str(maxid))
-        connector.commit()
-        newDailyBudgetMenu(message,maxid)
-    elif(str(message.text) == str(fastest)[0:5]+'DOGE(fastest)'):
-        mycursor = connector.cursor()  
-        mycursor.execute('UPDATE adcampaign SET cpc = \'' + str(fastest) + '\' WHERE campaignId = ' + str(maxid))
+        mycursor.execute('UPDATE adcampaign SET cpc = \'' + str(message.text)[0:6] + '\' WHERE campaignId = ' + str(maxid))
         connector.commit()
         newDailyBudgetMenu(message,maxid)
     else:
@@ -334,11 +334,11 @@ def addCpc(message,maxid):
 def newDailyBudgetMenu(message,maxid):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     #usare qualche variabile globale cosi se cambi quella cambia pure qui
-    keyboard.row(str(cents10)[0:5]+'DOGE($0.10)',str(cents25)[0:5]+'DOGE($0.25)',str(cents100)[0:5]+'DOGE($1.00)')
-    keyboard.row(str(cents200)[0:5]+'DOGE($2.00)',str(cents500)[0:5]+'DOGE($5.00)',str(cents1000)[0:5]+'DOGE($10.00)')
+    keyboard.row(str(cents10).split('.')[0]+' DOGE($0.10)',str(cents25).split('.')[0]+' DOGE($0.25)',str(cents100).split('.')[0]+' DOGE($1.00)')
+    keyboard.row(str(cents200).split('.')[0]+' DOGE($2.00)',str(cents500).split('.')[0]+' DOGE($5.00)',str(cents1000).split('.')[0]+' DOGE($10.00)')
     keyboard.row('❌ Cancel')
     #usare qualche variabile globale per min amount
-    title = bot.send_message(message.chat.id, "How much do you want to spend per day?\n\nThe minimum amount is "+str(minamount)[0:5]+" DOGE.\n\nEnter a value in DOGE:", parse_mode='Markdown',
+    title = bot.send_message(message.chat.id, "How much do you want to spend per day?\n\nThe minimum amount is *"+str(slowest)[0:5]+" DOGE*\n\nEnter a value in DOGE:", parse_mode='Markdown',
                      reply_markup=keyboard)
     bot.register_next_step_handler(message=title,maxid=maxid, callback=addDailyBudget)
 
@@ -367,7 +367,7 @@ def balanceMenu(message):
     keyboard.row('➕ Deposit', '💵 Withdraw')
     keyboard.add('💰 Balance', '🕑 History')
     keyboard.add('🏠 Menu')
-    bot.send_message(message.chat.id, "Available balance: *"+str(getUserBalance(message.chat.id))+" DOGE*", parse_mode='Markdown',
+    bot.send_message(message.chat.id, "Available balance: *"+str(getUserBalance(message.chat.username))+" DOGE*", parse_mode='Markdown',
                      reply_markup=keyboard)
 
 def depositMenu(message):
@@ -375,14 +375,14 @@ def depositMenu(message):
     keyboard.row('➕ Deposit', '💵 Withdraw')
     keyboard.add('💰 Balance', '🕑 History')
     keyboard.add('🏠 Menu')
-    bot.send_message(message.chat.id, "To deposit funds, send at least *1 DOGE* to the following address:\n\n *" + str(getUserAddress(message.chat.id)) + "* \n\n Deposits are not subject to a fee.",
+    bot.send_message(message.chat.id, "To deposit funds, send at least *1 DOGE* to the following address:\n\n *" + str(getUserAddress(message.chat.username)) + "* \n\n Deposits are not subject to a fee.",
                      parse_mode='Markdown',
                      reply_markup=keyboard)
 
 def withdrawMenu2(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row('❌ Cancel')
-    bot.send_message(message.chat.id, "Your balance: *" + str(getUserBalance(message.chat.id)) + " DOGE*\n\nTo withdraw, enter your Dogecoin address:",
+    bot.send_message(message.chat.id, "Your balance: *" + str(getUserBalance(message.chat.username)) + " DOGE*\n\nTo withdraw, enter your Dogecoin address:",
                      parse_mode='Markdown',
                      reply_markup=keyboard)
 
@@ -392,8 +392,8 @@ def withdrawMenu(message):
     keyboard.add('💰 Balance', '🕑 History')
     keyboard.add('🏠 Menu')
 
-    if(float(getUserBalance(message.chat.id)) < 4):
-        bot.send_message(message.chat.id, "Your balance is too small to withdraw.\n\n Available balance: *" + str(getUserBalance(message.chat.id)) + " DOGE* \n\n Minimum withdrawal: *4 DOGE*",
+    if(float(getUserBalance(message.chat.username)) < 4):
+        bot.send_message(message.chat.id, "Your balance is too small to withdraw.\n\n Available balance: *" + str(getUserBalance(message.chat.username)) + " DOGE* \n\n Minimum withdrawal: *4 DOGE*",
                      parse_mode='Markdown',
                      reply_markup=keyboard)
     else:
@@ -413,12 +413,12 @@ def historyMenu(message):
     keyboard.row('➕ Deposit', '💵 Withdraw')
     keyboard.add('💰 Balance', '🕑 History')
     keyboard.add('🏠 Menu')
-    bot.send_message(message.chat.id, "*Click the link below to see your transaction history* \n\n" +str(getUserHistory(message.chat.id))+"", parse_mode='Markdown',
+    bot.send_message(message.chat.id, "*Click the link below to see your transaction history* \n\n" +str(getUserHistory(message.chat.username))+"", parse_mode='Markdown',
                      reply_markup=keyboard)
 
 def settingsMenu(message):
         print("settings")
-        nsfw = getNsfw(message.chat.id)
+        nsfw = getNsfw(message.chat.username)
         markup = telebot.types.InlineKeyboardMarkup()
 
         if nsfw == 1:
@@ -445,10 +445,10 @@ def query_handler(call):
             callback_query_id=call.id, text='Settings Saved!')
         if call.data == '1':
             answer = 'NSFW Ads have been Disabled!'
-            disableNsfw(call.message.chat.id)
+            disableNsfw(call.message.chat.username)
         elif call.data == '2':
             answer = 'NSFW Ads have Enabled!'
-            enableNsfw(call.message.chat.id)
+            enableNsfw(call.message.chat.username)
         elif call.data == '3':
             answer = '⬅ Back to main menu'
 
@@ -457,22 +457,22 @@ def query_handler(call):
             call.message.chat.id, call.message.message_id)
 
 #inserts new user in the DB
-def insertUser(chatId,userAddress):
+def insertUser(chatId,userAddress,country,username):
 
     mycursor = connector.cursor()
 
-    sql = "INSERT INTO user (userId, referral, address, taskAlert, seeNsfw) VALUES (%s, %s, %s, %s, %s)"
-    val = (chatId, chatId, userAddress, 1, 1)
+    sql = "INSERT INTO user (userId, referral, address, taskAlert, seeNsfw, country, username) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    val = (chatId, chatId, userAddress, 1, 1, country, username)
     mycursor.execute(sql, val)
     connector.commit()
     print(mycursor.rowcount, "record inserted.")
 
 #check if user is already inserted in the DB
-def checkUserId(chatId):
+def checkUserId(username):
     print("check user id")
 
     mycursor = connector.cursor()
-    mycursor.execute("SELECT * FROM user WHERE userId = " + str(chatId))
+    mycursor.execute("SELECT * FROM user WHERE username = \'" + str(username)+"\'")
     myresult = mycursor.fetchall()
 
     if  myresult:
@@ -482,11 +482,11 @@ def checkUserId(chatId):
         print("user is new")
         return 1
 
-def checkUserAddress(chatId):
+def checkUserAddress(username):
     print("check user Address")
 
     mycursor = connector.cursor()
-    mycursor.execute("SELECT address FROM user WHERE userId = " + str(chatId))
+    mycursor.execute("SELECT address FROM user WHERE username = \'" + str(username)+"\'")
     myresult = mycursor.fetchall()
 
     if myresult:
@@ -497,13 +497,13 @@ def checkUserAddress(chatId):
         return 0
 
 #returns the number of ads of a user
-def checkUserAds(chatId):
+def checkUserAds(username):
         print("check user Ads")
 
-        print("chat id ads " + str(chatId))
+        print("username ads = " + str(username))
         mycursor = connector.cursor()
-        print("SELECT COUNT(userId) FROM adcampaign WHERE userId = " + str(chatId) + " GROUP BY userId")
-        mycursor.execute("SELECT COUNT(userId) FROM adcampaign WHERE userId = " + str(chatId)+" GROUP BY userId")
+        print("SELECT COUNT(username) FROM adcampaign WHERE username = \'" + str(username) + "\' GROUP BY username")
+        mycursor.execute("SELECT COUNT(username) FROM adcampaign WHERE username = \'" + str(username)+"\' GROUP BY username")
 
         myresult = mycursor.fetchall()
 
@@ -515,10 +515,10 @@ def checkUserAds(chatId):
             print("ads doesnt exist")
             return 0
 
-def getReferralCode(chatId):
+def getReferralCode(username):
 
         mycursor = connector.cursor()
-        mycursor.execute('SELECT referral FROM user WHERE userId = ' + str(chatId))
+        mycursor.execute('SELECT referral FROM user WHERE username = \'' + str(username)+'\'')
         
 
         myresult = mycursor.fetchall()
@@ -531,32 +531,32 @@ def getReferralCode(chatId):
             print("ERROR")
             return 0
 
-def getUserBalance(chatId):
+def getUserBalance(username):
     print("check user balance")
-    balance = block_io.get_address_by(label=chatId)["data"]["available_balance"]
+    balance = block_io.get_address_by(label=username)["data"]["available_balance"]
     print(balance)
     return str(float(balance))
 
-def getUserAddress(chatId):
+def getUserAddress(username):
     print("check user address")
-    address = checkUserAddress(chatId)
+    address = checkUserAddress(username)
     print(address)
     return address
 
-def getUserHistory(chatId):
+def getUserHistory(username):
     print("check user history")
-    address = getUserAddress(chatId)
+    address = getUserAddress(username)
     history = "https://sochain.com/address/DOGETEST/"+address
     print(history)
     return history
 
 
 
-def getNsfw(chatId):
+def getNsfw(username):
     print("check user Nsfw settings")
 
     mycursor = connector.cursor()
-    mycursor.execute("SELECT seeNsfw FROM user WHERE userId = " + str(chatId))
+    mycursor.execute("SELECT seeNsfw FROM user WHERE username = \'" + str(username)+'\'')
     myresult = mycursor.fetchall()
 
     print("risultato check nsfw = " + str(myresult[0][0]))
@@ -568,29 +568,29 @@ def getNsfw(chatId):
         return 0
 
 #returns all data of all ads of a user
-def getUserAds(chatId):
+def getUserAds(username):
         print("get all user Ads")
 
         mycursor = connector.cursor()
-        print("SELECT * FROM adcampaign WHERE userId = " + str(chatId))
-        mycursor.execute("SELECT * FROM adcampaign WHERE userId = " + str(chatId))
+        print("SELECT * FROM adcampaign WHERE username = \'" + str(username)+'\'')
+        mycursor.execute("SELECT * FROM adcampaign WHERE username = \'" + str(username)+'\'')
 
         myresult = mycursor.fetchall()
         return myresult
 
-def disableNsfw(chatId):
+def disableNsfw(username):
     print("disable user Nsfw settings")
 
     mycursor = connector.cursor()
-    mycursor.execute("UPDATE user SET seeNsfw = 0 WHERE userId = " + str(chatId))
+    mycursor.execute("UPDATE user SET seeNsfw = 0 WHERE username = \'" + str(username)+'\'')
     connector.commit()
 
-def enableNsfw(chatId):
+def enableNsfw(username):
     print("enable user Nsfw settings")
-    print(chatId)
+    print(username)
 
     mycursor = connector.cursor()
-    mycursor.execute("UPDATE user SET seeNsfw = 1 WHERE userId = " + str(chatId))
+    mycursor.execute("UPDATE user SET seeNsfw = 1 WHERE username = \'" + str(username)+'\'')
     connector.commit()
 
 # waitForUserInteraction
