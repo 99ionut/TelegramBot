@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 28, 2020 at 11:15 PM
+-- Generation Time: Dec 05, 2020 at 11:29 PM
 -- Server version: 10.4.14-MariaDB
 -- PHP Version: 7.2.34
 
@@ -38,27 +38,31 @@ CREATE TABLE `adcampaign` (
   `status` tinyint(1) NOT NULL,
   `url` varchar(512) NOT NULL,
   `username` varchar(128) NOT NULL,
-  `country` varchar(5) DEFAULT NULL,
+  `country` varchar(100) DEFAULT NULL,
   `totalclicks` int(11) NOT NULL,
-  `seconds` int(11) NOT NULL
+  `seconds` int(11) NOT NULL,
+  `dateAdded` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Dumping data for table `adcampaign`
 --
 
-INSERT INTO `adcampaign` (`campaignId`, `title`, `description`, `nsfw`, `clicks`, `cpc`, `dailyBudget`, `status`, `url`, `username`, `country`, `totalclicks`, `seconds`) VALUES
-(56, 'provatitolo1', 'provadescrizione1', 0, 0, 0.029, 72, 1, 'http://prova1.com', 'IonutZuZu', 'xx', 0, 0),
-(57, 'wwwwwww', 'ssssssssssssssssss', 0, 0, 0.0292, 292, 1, 'http://fffffffffff', 'IonutZuZu', 'xx', 0, 10),
-(58, 'wwwwwwww', 'wwwwwwwwwwww', 0, 0, 0.0291, 1456, 1, 'http://fffffffffffssssss', 'IonutZuZu', 'xx', 0, 10),
-(59, 'aaaaaaa', 'aaaaaaaaaaaaaaaa', 1, 0, 0.0291, 1456, 1, 'http://aaaaaaaaaaaa', 'IonutZuZu', 'xx', 0, 10),
-(60, 'titolo2', 'description2', 1, 0, 0.0292, 292, 1, 'https://addddd2', 'IonutZuZu', 'xx', 0, 10),
-(61, 'titolo3', 'description3', 1, 0, 0.0292, 1462, 1, 'http://titolo3', 'IonutZuZu', 'xx', 0, 10),
-(62, 'rrrrrrr', 'ttttttttt', 1, 1, 1, 22, 1, 'wewewwew', 'wwwwwww', 'ww', 1, 12),
-(63, 'titolo4', 'desssscription4', 1, 0, 0.0292, 1463, 1, 'http://titolo4', 'IonutZuZu', 'xx', 0, 10),
-(64, 'eeeeeeeeee', 'rrrrrrrrrrrrrrrrrr', 1, 0, 0.0294, 73, 1, 'http://www.ggggg.pc', 'IonutZuZu', 'xx', 0, 10),
-(65, 'wwwwww', 'eeeeeeeeeee', 1, 0, 0.443, 2956, 1, 'http://wwwwwww.com', 'IonutZuZu', 'xx', 0, 10),
-(66, 'wwwwwww', 'eeeeeeeeee', 0, 0, 0.148, 1480, 1, 'http://ssssss.com', 'IonutZuZu', 'xx', 0, 10);
+INSERT INTO `adcampaign` (`campaignId`, `title`, `description`, `nsfw`, `clicks`, `cpc`, `dailyBudget`, `status`, `url`, `username`, `country`, `totalclicks`, `seconds`, `dateAdded`) VALUES
+(56, 'provatitolo1', 'provadescrizione1', 0, 0, 0.029, 72, 1, 'http://prova1.com', 'IonutZuZu', 'xx', 0, 0, NULL),
+(67, 'lllllll', 'kkkkkkkkkkkkkk', 0, 0, 0.1419, 283, 1, 'http://sssssss.com', 'IonutZuZu', 'xx', 0, 10, NULL),
+(68, 'èèèèèèèèèèèè', 'ooooooooooooooo', 1, 0, 0.148, 296, 1, 'http://ooooooo.com', 'IonutZuZu', 'xx', 0, 10, '0000-00-00'),
+(69, 'tttttttttttttttt', 'rrrrrrrrrrrrrrrr', 1, 0, 0.148, 592, 1, 'http://ttttttttttttttt.com', 'IonutZuZu', 'xx', 0, 10, '2020-11-10'),
+(70, 'eeeeeeeeeeee', 'rrrrrrrrrrrrrrrrrrrrrr', 1, 0, 0.1478, 295, 1, 'http://wwwwwwwwww.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-05'),
+(71, 'gggggggggggggg', 'ggggggggggggggggggg', 1, 0, 0.0295, 0, 1, 'http://nnnnnnnnnnnnnnnn.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-05'),
+(72, 'wwwwwwwwwwww', 'wwwwwwwwwwwwwwww', 1, 0, 0.0296, 0, 1, 'http://wwwwwwwwwwww.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-05'),
+(73, 'pppppppppppp', 'ooooooooooooo', 1, 0, 0.1475, 73, 1, 'http://ssssssss.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-05'),
+(74, 'rrrrrrrrrr', 'tttttttttttttt', 0, 0, 0.148, 74, 1, 'http://wwwwwwwwwwww.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-05'),
+(75, 'pppppppppppp', 'oooooooooooooooo', 0, 0, 0.04, 73, 1, 'http://ssssssssssss.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-05'),
+(76, 'pppppppppppp', 'wwwwwwwwww', 0, 0, 0.09, 34, 1, 'http://sssssssssss.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-05'),
+(77, '3333333333333', '44444444444444', 0, 0, 0.1479, 999, 1, 'http://poooooooooooooo.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-05'),
+(78, 'oooooooooooo', 'ppppppppppp', 1, 0, 0.0293, 293, 1, 'http://sssssssss.com', 'IonutZuZu', 'us,de,gb,fr,', 0, 10, '2020-12-05'),
+(79, 'ppppppppp', 'ooooooooooo', 1, 0, 0.1467, 2934, 1, 'http://sssssssssssssss.com', 'IonutZuZu', 'ng,de,vn,nl,ph,in,ve,gb,', 0, 10, '2020-12-05');
 
 -- --------------------------------------------------------
 
@@ -74,16 +78,18 @@ CREATE TABLE `user` (
   `address` varchar(64) NOT NULL,
   `referredBy` varchar(64) NOT NULL,
   `country` varchar(5) DEFAULT NULL,
-  `username` varchar(128) NOT NULL
+  `username` varchar(128) NOT NULL,
+  `dateJoined` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Dumping data for table `user`
 --
 
-INSERT INTO `user` (`userId`, `referral`, `taskAlert`, `seeNsfw`, `address`, `referredBy`, `country`, `username`) VALUES
-('626602519', 'bPEKnEKO', 1, 1, '2N5ApERYxn2mWiK584KEb3Y6qZtX9n8YHKp', '', 'en', 'IonutZuZu'),
-('666666', 'eeeeee', 1, 1, 'wwwwwwwww', 'wwwwwwwww', 'ww', 'wwwwwww');
+INSERT INTO `user` (`userId`, `referral`, `taskAlert`, `seeNsfw`, `address`, `referredBy`, `country`, `username`, `dateJoined`) VALUES
+('626602519', 'bPEKnEKO', 1, 0, '2N5ApERYxn2mWiK584KEb3Y6qZtX9n8YHKp', '', 'en', 'IonutZuZu', NULL),
+('374408239', 'LdWxuVuw', 1, 1, '2My1b62H5U4uQiYZvd8nXDt1rxdcQUnzGre', '', 'de', 'Trafficbossadmin', NULL),
+('666666', 'eeeeee', 1, 1, 'wwwwwwwww', 'wwwwwwwww', 'ww', 'wwwwwww', NULL);
 
 --
 -- Indexes for dumped tables
@@ -111,7 +117,7 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT for table `adcampaign`
 --
 ALTER TABLE `adcampaign`
-  MODIFY `campaignId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
+  MODIFY `campaignId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=80;
 
 --
 -- Constraints for dumped tables
