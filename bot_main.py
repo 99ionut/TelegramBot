@@ -8,6 +8,7 @@ import validators
 import requests
 from pycoingecko import CoinGeckoAPI
 from datetime import date
+import random
 
 # DB CONNECTOR SINGLETON
 connector = dbConnector.connect()
@@ -24,7 +25,7 @@ def getDogePrice():
     return price
 
 #ADMIN LIST (telegram username)
-adminlist = ["IonutZuzu","userTest"]
+adminlist = ["IonutZuZu","userTest"]
 
 ###WITHDRAW
 #minimum withdraw amount (in doge)
@@ -39,7 +40,7 @@ slowest = 0.0001/getDogePrice()
 faster = 0.0005/getDogePrice()
 fastest = 0.0015/getDogePrice()
 #maximum cpc amount, must be lower or equal to the dayly budgets minimum amount
-maxamount = 0.09/getDogePrice() 
+maxamount = 0.10/getDogePrice() 
 
 
 ###DAILY BUDGET (the number on the left doesn't have to be equal to the number on the right, ONLY CHANGE THE NUMBER ON THE RIGHT!)
@@ -127,8 +128,6 @@ def cancel_message(message):
 @bot.message_handler(commands=['admin'])
 def admin_message(message):
     if(message.chat.username in adminlist):
-        print
-        startMenu(message)
         print("user is admin")
     else:
         print("user is NOT admin")
@@ -225,13 +224,144 @@ def send_text(message):
 def visitSitesMenu(message):
     markup = telebot.types.InlineKeyboardMarkup()
 
+    ad = getRandomAd(message)
+    while (ad == None):
+        ad = getRandomAd(message)
+
+    print("RECIEVED AD = "+str(ad))
+
     markup.add(telebot.types.InlineKeyboardButton(
-        text='🔎 Go to website', callback_data=3))
+        text='🔎 Go to website', url=str(ad[8]), callback_data=3))
     markup.add(telebot.types.InlineKeyboardButton(
         text='🛑 Report', callback_data=4), telebot.types.InlineKeyboardButton(
         text='⏭ Skip', callback_data=5))
     bot.send_message(
-        message.chat.id, text="How much is 2 plus 2?", reply_markup=markup)
+        message.chat.id, text=""+str(ad[1])+"\n\n"+str(ad[2])+"" , reply_markup=markup)
+
+def getRandomAd(message):
+    #50% to get a high paying ad (fasters), 30% to get a medium paying ad (faster), 20% to get a low paying ad(slow)
+    randomPaying = (random.randint(0, 9))
+    if (randomPaying >= 0 and randomPaying <= 4):
+        #high paying
+        #30% to 0-10s, 25% to 10-20s, 20% to 20-30s, 15% to 30-40s, 5% to 40-50s, 5% to 50-60s. 
+        randomSeconds = (random.randint(0, 99)) #fastest paying and <= 10 s
+        if(randomSeconds >= 0 and randomSeconds <= 29):   #fastest paying and <= 10 s
+            seconds = 10
+        elif(randomSeconds >= 30 and randomSeconds <= 54): #fastest paying and <= 20 s
+            seconds = 20
+        elif(randomSeconds >= 55 and randomSeconds <= 74): #fastest paying and <= 30 s
+            seconds = 30
+        elif(randomSeconds >= 75 and randomSeconds <= 89): #fastest paying and <= 40 s
+            seconds = 40
+        elif(randomSeconds >= 90 and randomSeconds <= 94): #fastest paying and <= 50 s
+            seconds = 50
+        elif(randomSeconds >= 95 and randomSeconds <= 99): #fastest paying and <= 60 s
+            seconds = 60
+        else:
+            getRandomAd(message)
+
+        mycursor = connector.cursor()
+        mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'fastest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
+        ad = mycursor.fetchall()
+        
+        if(str(ad) == "[]"):
+            getRandomAd(message)
+
+        else:
+            print("SELECT * FROM adcampaign WHERE speed = \'fastest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
+            print("FASTEST")
+            print("seconds = "+str(seconds))
+
+            adnumber = 0
+            for i in ad:
+                #print("adNumber = "+str(adnumber)+" "+str(ad[adnumber]))
+                adnumber = adnumber + 1
+
+            randomAdNumber = (random.randint(0, adnumber-1))
+            print("ad selected = "+str(ad[randomAdNumber]))
+            return ad[randomAdNumber]
+
+    elif (randomPaying >= 5 and randomPaying <= 7):
+        #medium paying
+        #30% to 0-10s, 25% to 10-20s, 20% to 20-30s, 15% to 30-40s, 5% to 40-50s, 5% to 50-60s. 
+        randomSeconds = (random.randint(0, 99))
+        if(randomSeconds >= 0 and randomSeconds <= 29): #faster paying and <= 10 s
+            seconds = 10
+        elif(randomSeconds >= 30 and randomSeconds <= 54): #faster paying and <= 20 s
+            seconds = 20
+        elif(randomSeconds >= 55 and randomSeconds <= 74): #faster paying and <= 30 s
+            seconds = 30
+        elif(randomSeconds >= 75 and randomSeconds <= 89): #faster paying and <= 40 s
+            seconds = 40
+        elif(randomSeconds >= 90 and randomSeconds <= 94): #faster paying and <= 50 s
+            seconds = 50
+        elif(randomSeconds >= 95 and randomSeconds <= 99): #faster paying and <= 60 s
+            seconds = 60
+        else:
+            getRandomAd(message)
+
+        mycursor = connector.cursor()
+        mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'faster\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
+        ad = mycursor.fetchall()
+
+        if(str(ad) == "[]"):
+            getRandomAd(message)
+
+        else:
+            print("SELECT * FROM adcampaign WHERE speed = \'faster\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
+            print("FASTER")
+            print("seconds = "+str(seconds))
+            
+            adnumber = 0
+            for i in ad:
+                #print("adNumber = "+str(adnumber)+" "+str(ad[adnumber]))
+                adnumber = adnumber + 1
+
+            randomAdNumber = (random.randint(0, adnumber-1))
+            print("ad selected = "+str(ad[randomAdNumber]))
+            return ad[randomAdNumber]
+        
+    elif (randomPaying >= 8 and randomPaying <= 9):
+        #lowpaying
+        #30% to 0-10s, 25% to 10-20s, 20% to 20-30s, 15% to 30-40s, 5% to 40-50s, 5% to 50-60s.
+        randomSeconds = (random.randint(0, 99))
+        if(randomSeconds >= 0 and randomSeconds <= 29): #slowest paying and <= 10 s
+            seconds = 10
+        elif(randomSeconds >= 30 and randomSeconds <= 54): #slowest paying and <= 20 s
+            seconds = 20
+        elif(randomSeconds >= 55 and randomSeconds <= 74): #slowest paying and <= 30 s
+            seconds = 30
+        elif(randomSeconds >= 75 and randomSeconds <= 89): #slowest paying and <= 40 s
+            seconds = 40
+        elif(randomSeconds >= 90 and randomSeconds <= 94): #slowest paying and <= 50 s
+            seconds = 50
+        elif(randomSeconds >= 95 and randomSeconds <= 99): #slowest paying and <= 60 s
+            seconds = 60
+            getRandomAd(message)
+
+        mycursor = connector.cursor()
+        mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'slowest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
+        ad = mycursor.fetchall()
+
+        if(str(ad) == "[]"):
+            getRandomAd(message)
+
+        else:
+            print("SELECT * FROM adcampaign WHERE speed = \'slowest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
+            print("SLOW")
+            print("seconds = "+str(seconds))
+            
+            adnumber = 0
+            for i in ad:
+                #print("adNumber = "+str(adnumber)+" "+str(ad[adnumber]))
+                adnumber = adnumber + 1
+
+            randomAdNumber = (random.randint(0, adnumber-1))
+            print("ad selected = "+str(ad[randomAdNumber]))
+            return ad[randomAdNumber]
+        
+    else: 
+        getRandomAd(message)
 
 
 def startMenu(message):
@@ -302,7 +432,7 @@ def newAdUrlMenu(message):
     bot.register_next_step_handler(message=message, callback=addUrl)
 
 def addUrl(message):
-    valid=validators.url(str(message.text))
+    valid=validators.url(str(message.text)) #todo if url doesnt exist sometimes it breaks, use try catch http://sssssssss.ocm or maybe it breakes in xframe
     if(valid==True):
         newAdTitleMenu(message, str(message.text))
     elif(str(message.text) == '❌Cancel'):
@@ -404,20 +534,23 @@ def addAcceptGeotargeting(message,url,adtitle,description,nsfw):
     else:
         newAdSecondsMenu(message,url,adtitle,description,nsfw,usercountries)
     
-def newAdSecondsMenu(message,url,adtitle,description,nsfw,geotargeting): #todo
-    r = requests.get(url)
-    #print("HEADERS = "+str(r.headers))
+def newAdSecondsMenu(message,url,adtitle,description,nsfw,geotargeting): #todo sites like btc.org break
+    try:
+        r = requests.get(url)
+        #print("HEADERS = "+str(r.headers))
 
-    if ("X-Frame-Options" in str(r.headers)):
-        print("can't use xframe")
-        newAdCpcMenu(message,url,adtitle,description,nsfw,geotargeting)
-    else:
-        print("xframe allowed")
-        keyboard = telebot.types.ReplyKeyboardMarkup(True)
-        keyboard.row('✅ Yes','🚫 No')
-        keyboard.row('❌Cancel') 
-        bot.send_message(message.chat.id, "Your link URL supports *visitor timing.* ⏲ \n\nRequire visitors to stay on the page for at least *10 seconds?*",parse_mode='Markdown',reply_markup=keyboard)
-        bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, description=description, nsfw=nsfw, geotargeting=geotargeting, callback=newAdSeconds)
+        if ("X-Frame-Options" in str(r.headers)):
+            print("can't use xframe")
+            newAdCpcMenu(message,url,adtitle,description,nsfw,geotargeting,str(10)) # default seconds
+        else:
+            print("xframe allowed")
+            keyboard = telebot.types.ReplyKeyboardMarkup(True)
+            keyboard.row('✅ Yes','🚫 No')
+            keyboard.row('❌Cancel') 
+            bot.send_message(message.chat.id, "Your link URL supports *visitor timing.* ⏲ \n\nRequire visitors to stay on the page for at least *10 seconds?*",parse_mode='Markdown',reply_markup=keyboard)
+            bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, description=description, nsfw=nsfw, geotargeting=geotargeting, callback=newAdSeconds)
+    except ValueError:
+        newAdCpcMenu(message,url,adtitle,description,nsfw,geotargeting,str(10))
 
 def newAdSeconds(message,url,adtitle,description,nsfw,geotargeting):
     if(str(message.text)=='❌Cancel'):
@@ -449,7 +582,7 @@ def addAcceptSeconds(message,url,adtitle,description,nsfw,geotargeting):
 
 def newAdCpcMenu(message,url,adtitle,description,nsfw,geotargeting,seconds):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row(str(slowest)[0:6]+' DOGE(slowest)',str(faster)[0:6]+' DOGE(faster)',str(fastest)[0:5]+' DOGE(fastest)')
+    keyboard.row(str(slowest)[0:6]+' DOGE(slowest)',str(faster)[0:6]+' DOGE(faster)',str(fastest)[0:6]+' DOGE(fastest)')
     keyboard.row('❌Cancel')
     title = bot.send_message(message.chat.id, "What is the most you want to pay *per click?* \n\nThe higher your cost per click, the faster people will see your ad. \n\nThe minimum amount is *"+str(slowest)[0:6] +" DOGE*\n\nEnter a value in DOGE:", parse_mode='Markdown', reply_markup=keyboard)
     bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, description=description, nsfw=nsfw, geotargeting=geotargeting, seconds=seconds, callback=addCpc)
@@ -458,34 +591,41 @@ def addCpc(message,url,adtitle,description,nsfw,geotargeting,seconds):
         try:        
             if(str(message.text)=='❌Cancel'):
                 cancelAdMenu(message)
-            elif(float(str(message.text)[0:6]) >= float(str(slowest)[0:6]) and float(str(message.text)[0:6]) <= float(str(maxamount)[0:6])):
-                newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,seconds,message.text)
+            elif(float(str(message.text)[0:6]) >= float(str(slowest)[0:6]) and float(str(message.text)[0:6]) < float(str(faster)[0:6])):
+                speed = "slowest"
+                newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,seconds,message.text,speed)
+            elif(float(str(message.text)[0:6]) >= float(str(faster)[0:6]) and float(str(message.text)[0:6]) < float(str(fastest)[0:6])):
+                speed = "faster"
+                newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,seconds,message.text,speed)
+            elif(float(str(message.text)[0:6]) >= float(str(fastest)[0:6]) and float(str(message.text)[0:6]) <= float(str(maxamount)[0:6])):
+                speed = "fastest"
+                newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,seconds,message.text,speed)        
             else:
                 newAdCpcMenu(message,url,adtitle,description,nsfw,geotargeting,seconds)
         except ValueError:
             newAdCpcMenu(message,url,adtitle,description,nsfw,geotargeting,seconds)
 
-def newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc):
+def newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc,speed):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row(str(cents10).split('.')[0]+' DOGE($0.10)',str(cents25).split('.')[0]+' DOGE($0.25)',str(cents100).split('.')[0]+' DOGE($1.00)')
     keyboard.row(str(cents200).split('.')[0]+' DOGE($2.00)',str(cents500).split('.')[0]+' DOGE($5.00)',str(cents1000).split('.')[0]+' DOGE($10.00)')
     keyboard.row('❌Cancel')
     title = bot.send_message(message.chat.id, "How much do you want to spend per day?\n\nThe minimum amount is *"+str(slowest)[0:5]+" DOGE*\n\nEnter a value in DOGE:", parse_mode='Markdown',
                      reply_markup=keyboard)
-    bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, description=description, nsfw=nsfw, geotargeting=geotargeting, seconds=seconds, cpc=cpc, callback=addDailyBudget)
+    bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, description=description, nsfw=nsfw, geotargeting=geotargeting, seconds=seconds, cpc=cpc, speed=speed, callback=addDailyBudget)
 
-def addDailyBudget(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc):
+def addDailyBudget(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc,speed):
         try:
             if(str(message.text)=='❌Cancel'):
                 cancelAdMenu(message)
             elif(float(str(message.text).split(' ')[0]) >= float(cents10) and float(str(message.text).split(' ')[0]) <= float(cents500000)):
-                insertAd(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc,str(message.text))        
+                insertAd(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc,speed,str(message.text))        
             else:
-                newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc)
+                newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc,speed)
         except ValueError:
-             newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc)
+             newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc,speed)
 
-def insertAd(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc,dailybudget):
+def insertAd(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc,speed,dailybudget):
     mycursor = connector.cursor()
     #print('Message = '+str(message))
     print('url = '+str(url))
@@ -496,7 +636,8 @@ def insertAd(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc,daily
     print('cpc = '+str(cpc))
     print('dailybudget = '+str(dailybudget))
     print('seconds = '+str(seconds))
-    mycursor.execute("INSERT INTO adcampaign(username,url,title,description,nsfw,country,cpc,dailybudget,status,clicks,totalclicks,seconds,dateAdded) VALUES('"+str(message.chat.username)+"','"+str(url)+"','"+str(adtitle)+"','"+str(description)+"','"+str(nsfw)+"','"+str(geotargeting)+"','"+str(cpc)+"','"+str(dailybudget)+"','"+str(1)+"','"+str(0)+"','"+str(0)+"','"+str(seconds)+"','"+str(date.today().year)+"/"+str(date.today().month)+"/"+str(date.today().day)+"')")
+    print('speed = '+str(speed))
+    mycursor.execute("INSERT INTO adcampaign(username,url,title,description,nsfw,country,cpc,dailybudget,status,clicks,totalclicks,seconds,dateAdded,speed) VALUES('"+str(message.chat.username)+"','"+str(url)+"','"+str(adtitle)+"','"+str(description)+"','"+str(nsfw)+"','"+str(geotargeting)+"','"+str(cpc)+"','"+str(dailybudget)+"','"+str(1)+"','"+str(0)+"','"+str(0)+"','"+str(seconds)+"','"+str(date.today().year)+"/"+str(date.today().month)+"/"+str(date.today().day)+"','"+str(speed)+"')")
     connector.commit()
     showInsertedAd(message)
 
@@ -621,7 +762,7 @@ def settingsMenu(message):
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
         keyboard = telebot.types.ReplyKeyboardMarkup(True)
-        bot.answer_callback_query(callback_query_id=call.id, text='Settings Saved!')
+        #bot.answer_callback_query(callback_query_id=call.id, text='Settings Saved!')
         if call.data == '1':
             bot.send_message(call.message.chat.id, "NSFW Advertisments have been ❌ *Disabled*!",parse_mode='Markdown',reply_markup=keyboard)
             mycursor = connector.cursor()
@@ -632,6 +773,11 @@ def query_handler(call):
             mycursor = connector.cursor()
             mycursor.execute("UPDATE user SET seeNsfw = 1 WHERE username = \'" + str(call.message.chat.username)+'\'')
             connector.commit()
+        elif call.data == '5':
+            visitSitesMenu(call.message)
+            print("SKIPPEEEDD")
+        elif call.data == '4':
+            print("AD REPORTED")
         elif call.data == '3':
             answer = '⬅ Back to main menu'
 
