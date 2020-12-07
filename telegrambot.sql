@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 06, 2020 at 09:00 PM
+-- Generation Time: Dec 08, 2020 at 12:49 AM
 -- Server version: 10.4.14-MariaDB
 -- PHP Version: 7.2.34
 
@@ -42,29 +42,31 @@ CREATE TABLE `adcampaign` (
   `totalclicks` int(11) NOT NULL,
   `seconds` int(11) NOT NULL,
   `dateAdded` date DEFAULT NULL,
-  `speed` varchar(20) NOT NULL
+  `speed` varchar(20) NOT NULL,
+  `reports` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Dumping data for table `adcampaign`
 --
 
-INSERT INTO `adcampaign` (`campaignId`, `title`, `description`, `nsfw`, `clicks`, `cpc`, `dailyBudget`, `status`, `url`, `username`, `country`, `totalclicks`, `seconds`, `dateAdded`, `speed`) VALUES
-(89, 'wwwwwwwwww', 'eeeeeeeeeeeeee', 1, 0, 0.16, 73, 1, 'http://facebook.com', 'IonutZuZu', 'us,de,gb,fr,it,ru,', 0, 10, '2020-12-06', 'faster'),
-(90, 'wwwwwwwwwww', 'yyyyyyyyyyyyyyyy', 1, 0, 0.1467, 2934, 1, 'http://facebook.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-06', 'slowest'),
-(91, 'wwwwwwwwwwww', 'ttttttttttttttttt', 1, 0, 0.147, 588, 1, 'http://facebook.com', 'IonutZuZu', 'us,de,gb,fr,jp,ch,my,', 0, 10, '2020-12-06', 'faster'),
-(92, 'ssssssssss', 'fffffffffffffff', 1, 0, 0.0294, 2941, 1, 'http://youtube.com', 'IonutZuZu', 'gb,fr,', 0, 10, '2020-12-06', 'slowest'),
-(93, 'ssssssssssssss', 'rrrrrrrrrrrrrrrrrrrrr', 0, 0, 0.441, 2941, 1, 'http://twitch.tv', 'IonutZuZu', 'xx', 0, 10, '2020-12-06', 'faster'),
-(94, 'oooooooooooo', 'ppppppppppppppppp', 0, 0, 0.441, 1471, 1, 'http://wwwwwwwwwww.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-06', 'faster'),
-(95, 'ooooooooooooo', 'ppppppppppppppp', 0, 0, 0.1471, 2942, 1, 'http://xxxxxxxxxxx.com', 'IonutZuZu', 'gb,fr,', 0, 58, '2020-12-06', 'faster'),
-(96, 'sssssssss', 'uuuuuuuuuuuuuuuu', 1, 0, 0.4413, 2942, 1, 'http://reddit.com', 'IonutZuZu', 'us,', 0, 10, '2020-12-06', 'fastest'),
-(97, 'wwwwwwwwwwwwww', 'eeeeeeeeeeeeeeee', 1, 0, 0.0293, 1465, 1, 'http://omega.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-06', 'slowest'),
-(98, 'wwwwwwwwwwwww', 'kkkkkkkkkkkkkkkkkkk', 0, 0, 0.4405, 2936, 1, 'http://yyyyyyyy.com', 'IonutZuZu', 'xx', 0, 23, '2020-12-06', 'fastest'),
-(99, 'wwwwwww', 'ggggggggggggg', 0, 0, 0.0293, 73, 1, 'http://youtube.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-06', 'slowest'),
-(100, 'wwwwwwwwww', 'eeeeeeeeeeeee', 0, 0, 0.1468, 587, 1, 'http://uuuuuuuuuuuu.com', 'IonutZuZu', 'xx', 0, 15, '2020-12-06', 'faster'),
-(101, 'wwwwwwwwww', 'eeeeeeeeeeeee', 0, 0, 0.4405, 1468, 1, 'http://pppppppp.com', 'IonutZuZu', 'xx', 0, 25, '2020-12-06', 'fastest'),
-(102, 'ssssssssssss', 'wwwwwwwwwww', 0, 0, 0.0293, 1469, 1, 'http://ooo.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-06', 'slowest'),
-(103, 'sssssssss', 'ttttttttttt', 1, 0, 0.0293, 2939, 1, 'http://ooo.com', 'IonutZuZu', 'xx', 0, 30, '2020-12-06', 'slowest');
+INSERT INTO `adcampaign` (`campaignId`, `title`, `description`, `nsfw`, `clicks`, `cpc`, `dailyBudget`, `status`, `url`, `username`, `country`, `totalclicks`, `seconds`, `dateAdded`, `speed`, `reports`) VALUES
+(89, 'wwwwwwwwww', 'eeeeeeeeeeeeee', 1, 0, 0.16, 73, 1, 'http://facebook.com', 'IonutZuZu', 'us,de,gb,fr,it,ru,', 0, 10, '2020-12-06', 'faster', 0),
+(90, 'wwwwwwwwwww', 'yyyyyyyyyyyyyyyy', 1, 0, 0.1467, 2934, 1, 'http://facebook.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-06', 'slowest', 0),
+(91, 'wwwwwwwwwwww', 'ttttttttttttttttt', 1, 0, 0.147, 588, 1, 'http://facebook.com', 'IonutZuZu', 'us,de,gb,fr,jp,ch,my,', 0, 10, '2020-12-06', 'faster', 0),
+(92, 'ssssssssss', 'fffffffffffffff', 1, 0, 0.0294, 2941, 1, 'http://youtube.com', 'IonutZuZu', 'gb,fr,', 0, 10, '2020-12-06', 'slowest', 0),
+(93, 'ssssssssssssss', 'rrrrrrrrrrrrrrrrrrrrr', 0, 0, 0.441, 2941, 1, 'http://twitch.tv', 'IonutZuZu', 'xx', 0, 10, '2020-12-06', 'faster', 0),
+(94, 'oooooooooooo', 'ppppppppppppppppp', 0, 0, 0.441, 1471, 1, 'http://wwwwwwwwwww.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-06', 'faster', 0),
+(95, 'ooooooooooooo', 'ppppppppppppppp', 0, 0, 0.1471, 2942, 1, 'http://xxxxxxxxxxx.com', 'IonutZuZu', 'gb,fr,', 0, 58, '2020-12-06', 'faster', 0),
+(96, 'sssssssss', 'uuuuuuuuuuuuuuuu', 1, 0, 0.4413, 2942, 1, 'http://reddit.com', 'IonutZuZu', 'us,', 0, 10, '2020-12-06', 'fastest', 0),
+(97, 'wwwwwwwwwwwwww', 'eeeeeeeeeeeeeeee', 1, 0, 0.0293, 1465, 1, 'http://omega.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-06', 'slowest', 0),
+(98, 'wwwwwwwwwwwww', 'kkkkkkkkkkkkkkkkkkk', 0, 0, 0.4405, 2936, 1, 'http://yyyyyyyy.com', 'IonutZuZu', 'xx', 0, 23, '2020-12-06', 'fastest', 0),
+(99, 'wwwwwww', 'ggggggggggggg', 0, 0, 0.0293, 73, 1, 'http://youtube.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-06', 'slowest', 0),
+(100, 'wwwwwwwwww', 'eeeeeeeeeeeee', 0, 0, 0.1468, 587, 1, 'http://uuuuuuuuuuuu.com', 'IonutZuZu', 'xx', 0, 15, '2020-12-06', 'faster', 0),
+(101, 'wwwwwwwwww', 'eeeeeeeeeeeee', 0, 0, 0.4405, 1468, 1, 'http://pppppppp.com', 'IonutZuZu', 'xx', 0, 25, '2020-12-06', 'fastest', 0),
+(102, 'ssssssssssss', 'wwwwwwwwwww', 0, 0, 0.0293, 1469, 1, 'http://ooo.com', 'IonutZuZu', 'xx', 0, 10, '2020-12-06', 'slowest', 0),
+(103, 'sssssssss', 'ttttttttttt', 1, 0, 0.0293, 2939, 1, 'http://ooo.com', 'IonutZuZu', 'xx', 0, 30, '2020-12-06', 'slowest', 0),
+(104, 'sssssssssss', 'sssssssssssssssssssss', 1, 0, 0.0299, 2998, 1, 'http://sssssssss.com', 'IonutZuZu', 'us,de,', 0, 10, '2020-12-07', 'slowest', 0);
 
 -- --------------------------------------------------------
 
@@ -119,7 +121,7 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT for table `adcampaign`
 --
 ALTER TABLE `adcampaign`
-  MODIFY `campaignId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=104;
+  MODIFY `campaignId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=105;
 
 --
 -- Constraints for dumped tables

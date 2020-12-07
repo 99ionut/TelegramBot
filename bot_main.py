@@ -236,7 +236,7 @@ def visitSitesMenu(message):
         text='🛑 Report', callback_data=4), telebot.types.InlineKeyboardButton(
         text='⏭ Skip', callback_data=5))
     bot.send_message(
-        message.chat.id, text=""+str(ad[1])+"\n\n"+str(ad[2])+"" , reply_markup=markup)
+        message.chat.id, text=""+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
 
 def getRandomAd(message):
     #50% to get a high paying ad (fasters), 30% to get a medium paying ad (faster), 20% to get a low paying ad(slow)
@@ -393,8 +393,14 @@ def referralMenu(message):
 
 def adsMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    markup = telebot.types.InlineKeyboardMarkup()
+    
     keyboard.row('➕ New ad', '📊 My ads')
     keyboard.add('🏠 Menu')
+
+    markup.add(telebot.types.InlineKeyboardButton(
+                text='✏️ Edit', callback_data=4), telebot.types.InlineKeyboardButton(
+                text='✅ Enabled', callback_data=5))
 
     if checkUserAds(message.chat.username) == 0:
         bot.send_message(message.chat.id, "You don't have any ad campaigns yet.", parse_mode='Markdown',
@@ -411,7 +417,9 @@ def adsMenu(message):
                 "\nURL: "+str(ads[i][8])+"\nStatus: "+str(ads[i][7])+\
                 "\nCPC: *"+str(ads[i][5])+" DOGE*\nDaily Budget: *"+str(ads[i][6])+" DOGE*"+\
                 "\nClicks: *"+str(ads[i][11])+"* total/ *"+str(ads[i][4])+"* today"
-                bot.send_message(message.chat.id, adsString,parse_mode='Markdown',reply_markup=keyboard)
+
+                bot.send_message(message.chat.id, adsString,parse_mode='Markdown',reply_markup=markup)
+                
                 adsString = ""
 
 def cancelAdMenu(message):
@@ -432,13 +440,22 @@ def newAdUrlMenu(message):
     bot.register_next_step_handler(message=message, callback=addUrl)
 
 def addUrl(message):
-    valid=validators.url(str(message.text)) #todo if url doesnt exist sometimes it breaks, use try catch http://sssssssss.ocm or maybe it breakes in xframe
-    if(valid==True):
-        newAdTitleMenu(message, str(message.text))
-    elif(str(message.text) == '❌Cancel'):
+    if(str(message.text)=='❌Cancel'):
         cancelAdMenu(message)
     else:
-        newAdUrlMenu(message)
+        try:
+            if requests.get(str(message.text)).status_code == 200:
+                valid=validators.url(str(message.text)) 
+                if(valid==True):
+                    newAdTitleMenu(message, str(message.text))
+                elif(str(message.text) == '❌Cancel'):
+                    cancelAdMenu(message)
+                else:
+                    newAdUrlMenu(message)
+            else:
+                newAdUrlMenu(message)
+        except:
+            newAdUrlMenu(message)
 #todo if url has weird characters it breakes because of markdown
 
 def newAdTitleMenu(message,url):
@@ -764,25 +781,34 @@ def query_handler(call):
         keyboard = telebot.types.ReplyKeyboardMarkup(True)
         #bot.answer_callback_query(callback_query_id=call.id, text='Settings Saved!')
         if call.data == '1':
+            
+            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id) 
             bot.send_message(call.message.chat.id, "NSFW Advertisments have been ❌ *Disabled*!",parse_mode='Markdown',reply_markup=keyboard)
             mycursor = connector.cursor()
             mycursor.execute("UPDATE user SET seeNsfw = 0 WHERE username = \'" + str(call.message.chat.username)+'\'')
             connector.commit()
         elif call.data == '2':
+            print("ID = "+str(call.message.json))
+            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
             bot.send_message(call.message.chat.id, "NSFW Advertisments have been ✅ *Enabled*!",parse_mode='Markdown',reply_markup=keyboard)
             mycursor = connector.cursor()
             mycursor.execute("UPDATE user SET seeNsfw = 1 WHERE username = \'" + str(call.message.chat.username)+'\'')
             connector.commit()
         elif call.data == '5':
+            #bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)  #deletes reply markup keyboard
+            bot.send_message(call.message.chat.id, "Skipping Task...",parse_mode='Markdown',reply_markup=keyboard)           
             visitSitesMenu(call.message)
-            print("SKIPPEEEDD")
+            print("AD SKIPPED")
         elif call.data == '4':
+            #todo nrOfTimesReported in db for each ad an then you can see the most reported. If the customer support says its allowed set the nr to 0, if not remove the ad.
+            #BASED ON THE CUSTOM URL which redirects the user to earndogetoday.com/visit/customurl which is created with the adid+url+userid, which is passed in the "call" object
+            print(call)
             print("AD REPORTED")
         elif call.data == '3':
             answer = '⬅ Back to main menu'
 
-        bot.edit_message_reply_markup(
-            call.message.chat.id, call.message.message_id)
+
 
 #inserts new user in the DB
 def insertUser(chatId,userAddress,country,username):
