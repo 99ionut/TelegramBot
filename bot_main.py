@@ -231,10 +231,10 @@ def visitSitesMenu(message):
     print("RECIEVED AD = "+str(ad))
 
     markup.add(telebot.types.InlineKeyboardButton(
-        text='🔎 Go to website', url=str(ad[8]), callback_data=3))
+        text='🔎 Go to website', url=str(ad[8]), callback_data="goToWebsite"))
     markup.add(telebot.types.InlineKeyboardButton(
-        text='🛑 Report', callback_data=4), telebot.types.InlineKeyboardButton(
-        text='⏭ Skip', callback_data=5))
+        text='🛑 Report', callback_data="reportAd"), telebot.types.InlineKeyboardButton(
+        text='⏭ Skip', callback_data="skipAd"))
     bot.send_message(
         message.chat.id, text=""+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
 
@@ -393,14 +393,19 @@ def referralMenu(message):
 
 def adsMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    markup = telebot.types.InlineKeyboardMarkup()
+    markupEnabled = telebot.types.InlineKeyboardMarkup()
+    markupDisabled = telebot.types.InlineKeyboardMarkup()
     
     keyboard.row('➕ New ad', '📊 My ads')
     keyboard.add('🏠 Menu')
 
-    markup.add(telebot.types.InlineKeyboardButton(
-                text='✏️ Edit', callback_data=4), telebot.types.InlineKeyboardButton(
-                text='✅ Enabled', callback_data=5))
+    markupEnabled.add(telebot.types.InlineKeyboardButton(
+                text='✏️ Edit', callback_data="editAd"), telebot.types.InlineKeyboardButton(
+                text='✅ Enable', callback_data="changeAdStateEnabled"))
+
+    markupDisabled.add(telebot.types.InlineKeyboardButton(
+                    text='✏️ Edit', callback_data="editAd"), telebot.types.InlineKeyboardButton(
+                    text='🚫 Disable', callback_data="changeAdStateDisabled"))
 
     if checkUserAds(message.chat.username) == 0:
         bot.send_message(message.chat.id, "You don't have any ad campaigns yet.", parse_mode='Markdown',
@@ -414,12 +419,24 @@ def adsMenu(message):
         print("ads="+str(ads))
         for i in range(int(nrAds)):
                 adsString = "*Campaign#"+ str(i+1) +"* \n\nTitle: *"+str(ads[i][1])+"*\nDescription: "+str(ads[i][2])+\
-                "\nURL: "+str(ads[i][8])+"\nStatus: "+str(ads[i][7])+\
-                "\nCPC: *"+str(ads[i][5])+" DOGE*\nDaily Budget: *"+str(ads[i][6])+" DOGE*"+\
+                "\nURL: "+str(ads[i][8])+"\nStatus: "
+                if(str(ads[i][7])=="1"):
+                    adsString = adsString + "* Enabled* ✅ "
+                    enabled = 1
+                elif(str(ads[i][7])=="0"):
+                    adsString = adsString + "*Disabled* 🚫 " 
+                    enabled = 0        
+                else:
+                    adsString = adsString + "*UNKNOWN* "
+
+                adsString = adsString + "\nCPC: *"+str(ads[i][5])+" DOGE*\nDaily Budget: *"+str(ads[i][6])+" DOGE*"+\
                 "\nClicks: *"+str(ads[i][11])+"* total/ *"+str(ads[i][4])+"* today"
 
-                bot.send_message(message.chat.id, adsString,parse_mode='Markdown',reply_markup=markup)
-                
+                if(enabled == 1):
+                    bot.send_message(message.chat.id, adsString,parse_mode='Markdown',reply_markup=markupDisabled)
+                elif(enabled == 0):
+                    bot.send_message(message.chat.id, adsString,parse_mode='Markdown',reply_markup=markupEnabled)
+               
                 adsString = ""
 
 def cancelAdMenu(message):
@@ -760,14 +777,14 @@ def settingsMenu(message):
 
         if nsfw == 1:
             markup.add(telebot.types.InlineKeyboardButton(
-            text='❌ Disable NSFW Advertisments', callback_data=1))
+            text='❌ Disable NSFW Advertisments', callback_data="disableNSFW"))
             markup.add(telebot.types.InlineKeyboardButton(
-            text='⬅ Back', callback_data=3))
+            text='⬅ Back', callback_data="goBack"))
         else:
             markup.add(telebot.types.InlineKeyboardButton(
-            text='✅ Enable NSFW Advertisments', callback_data=2))
+            text='✅ Enable NSFW Advertisments', callback_data="enableNSFW"))
             markup.add(telebot.types.InlineKeyboardButton(
-            text='⬅ Back', callback_data=3))
+            text='⬅ Back', callback_data="goBack"))
 
         if nsfw == 1:
             bot.send_message(
@@ -780,35 +797,185 @@ def settingsMenu(message):
 def query_handler(call):
         keyboard = telebot.types.ReplyKeyboardMarkup(True)
         #bot.answer_callback_query(callback_query_id=call.id, text='Settings Saved!')
-        if call.data == '1':
-            
+        if call.data == 'disableNSFW':
             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id) 
             bot.send_message(call.message.chat.id, "NSFW Advertisments have been ❌ *Disabled*!",parse_mode='Markdown',reply_markup=keyboard)
             mycursor = connector.cursor()
             mycursor.execute("UPDATE user SET seeNsfw = 0 WHERE username = \'" + str(call.message.chat.username)+'\'')
             connector.commit()
-        elif call.data == '2':
-            print("ID = "+str(call.message.json))
+        elif call.data == 'enableNSFW':
             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
             bot.send_message(call.message.chat.id, "NSFW Advertisments have been ✅ *Enabled*!",parse_mode='Markdown',reply_markup=keyboard)
             mycursor = connector.cursor()
             mycursor.execute("UPDATE user SET seeNsfw = 1 WHERE username = \'" + str(call.message.chat.username)+'\'')
             connector.commit()
-        elif call.data == '5':
+        elif call.data == 'skipAd':
             #bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
             bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)  #deletes reply markup keyboard
             bot.send_message(call.message.chat.id, "Skipping Task...",parse_mode='Markdown',reply_markup=keyboard)           
             visitSitesMenu(call.message)
             print("AD SKIPPED")
-        elif call.data == '4':
+        elif call.data == 'reportAd':
             #todo nrOfTimesReported in db for each ad an then you can see the most reported. If the customer support says its allowed set the nr to 0, if not remove the ad.
             #BASED ON THE CUSTOM URL which redirects the user to earndogetoday.com/visit/customurl which is created with the adid+url+userid, which is passed in the "call" object
             print(call)
             print("AD REPORTED")
-        elif call.data == '3':
-            answer = '⬅ Back to main menu'
+        elif call.data == 'goToWebsite':
+            print("goToWebsite")
+        elif call.data == 'changeAdStateEnabled':
+
+            print("changeAdStateEnabled")
+            print("AD user NR = "+str(str(call.message.text).split("#")[1].split(" ")[0]))
+            print("username = "+str(call.message.chat.username))
+            userAd = getUserAds(call.message.chat.username)[int(str(call.message.text).split("#")[1].split(" ")[0])-1][0]
+            print("USER AD = "+str(userAd))
+
+            mycursor = connector.cursor()
+            mycursor.execute("UPDATE adcampaign SET status = 1 WHERE campaignId = \'" + str(userAd)+'\'')
+            connector.commit()
+
+            newMessage = str(call.message.text).replace('Disabled 🚫','Enabled ✅')
+            newMessage = newMessage.replace('Campaign#','*Campaign#')
+            newMessage = newMessage.replace('Title:','*Title:*')
+            newMessage = newMessage.replace('Description:','*Description:')
+            newMessage = newMessage.replace('Status:','Status:*')
+            newMessage = newMessage.replace('CPC:','*CPC:*')
+            newMessage = newMessage.replace('Daily Budget:','*Daily Budget:*')
+            newMessage = newMessage.replace('Clicks:','*Clicks:*')
+            newMessage = newMessage.replace('total/','*total/*')
+            newMessage = newMessage.replace('today','*today')
+            bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=newMessage, parse_mode='Markdown')
+
+            editKeyboard = telebot.types.InlineKeyboardMarkup()
+            editKeyboard.add(telebot.types.InlineKeyboardButton(
+            text='✏️ Edit', callback_data="editAdEnabled"), telebot.types.InlineKeyboardButton(
+            text='🚫 Disable', callback_data="changeAdStateDisabled"))
+            bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=editKeyboard)
+            
+        elif call.data == 'changeAdStateDisabled':      
+            
+            
+            print("changeAdStateDisabled")
+            print("AD user NR = "+str(str(call.message.text).split("#")[1].split(" ")[0]))
+            print("username = "+str(call.message.chat.username))
+            userAd = getUserAds(call.message.chat.username)[int(str(call.message.text).split("#")[1].split(" ")[0])-1][0]
+            print("USER AD = "+str(userAd))
+        
+            mycursor = connector.cursor()
+            mycursor.execute("UPDATE adcampaign SET status = 0 WHERE campaignId = \'" + str(userAd)+'\'')
+            connector.commit()
+
+            newMessage = str(call.message.text).replace('Enabled ✅','Disabled 🚫')
+            newMessage = newMessage.replace('Campaign#','*Campaign#')
+            newMessage = newMessage.replace('Title:','*Title:*')
+            newMessage = newMessage.replace('Description:','*Description:')
+            newMessage = newMessage.replace('Status:','Status:*')
+            newMessage = newMessage.replace('CPC:','*CPC:*')
+            newMessage = newMessage.replace('Daily Budget:','*Daily Budget:*')
+            newMessage = newMessage.replace('Clicks:','*Clicks:*')
+            newMessage = newMessage.replace('total/','*total/*')
+            newMessage = newMessage.replace('today','*today')
+            bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=newMessage, parse_mode='Markdown')
+
+            editKeyboard = telebot.types.InlineKeyboardMarkup()
+            editKeyboard.add(telebot.types.InlineKeyboardButton(
+            text='✏️ Edit', callback_data="editAdEnabled"), telebot.types.InlineKeyboardButton(
+            text='✅ Enable', callback_data="changeAdStateEnabled"))
+            bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=editKeyboard)
+            
+
+        elif call.data == 'editAd':
+
+            editKeyboard = telebot.types.InlineKeyboardMarkup()
+            editKeyboard.add(telebot.types.InlineKeyboardButton(
+            text='Edit Title', callback_data="editAdTitle"), telebot.types.InlineKeyboardButton(
+            text='Edit Description', callback_data="editAdDescription"))
+            editKeyboard.add(telebot.types.InlineKeyboardButton(
+            text='Edit URL', callback_data="editAdUrl"), telebot.types.InlineKeyboardButton(
+            text='Geotargeting', callback_data="editAdGeotargeting"))
+            editKeyboard.add(telebot.types.InlineKeyboardButton(
+            text='Edit CPC', callback_data="editAdCpc"), telebot.types.InlineKeyboardButton(
+            text='Edit Budget', callback_data="editAdBudget"))
+            editKeyboard.add(telebot.types.InlineKeyboardButton(
+            text='⬅️ Back', callback_data="goAdBack"), telebot.types.InlineKeyboardButton(
+            text='🗑️ Delete', callback_data="deleteAd"))
+
+            
+            print("AD user NR = "+str(str(call.message.text).split("#")[1].split(" ")[0]))
+            print("Message ID = "+str(call.message.message_id))
+            bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=editKeyboard)
+            
+        elif call.data == 'editAdTitle':
+            print("EDIT AD TITLE")
+            print("AD user NR = "+str(str(call.message.text).split("#")[1].split(" ")[0]))
+            print("username = "+str(call.message.chat.username))
+            userAd = getUserAds(call.message.chat.username)[int(str(call.message.text).split("#")[1].split(" ")[0])-1][0]
+            print("USER AD = "+str(userAd))
+            editAdTitleMenu(call.message, userAd)
+
+        elif call.data == 'editAdDescription':
+            print("EDIT AD Description")
+            print("AD user NR = "+str(str(call.message.text).split("#")[1].split(" ")[0]))
+            print("username = "+str(call.message.chat.username))
+            userAd = getUserAds(call.message.chat.username)[int(str(call.message.text).split("#")[1].split(" ")[0])-1][0]
+            print("USER AD = "+str(userAd))
+            editAdDescriptionMenu(call.message, userAd)
 
 
+def editAdDescriptionMenu(message, userAd):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row('❌Cancel')
+    title = bot.send_message(message.chat.id, "Enter the new Description for your ad: \n\nIt must be between *10* and *180* characters.", parse_mode='Markdown',
+                     reply_markup=keyboard)
+    bot.register_next_step_handler(message=message, userAd=userAd, callback=editAdDescriptionInput)
+
+def editAdDescriptionInput(message,userAd):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+
+    if(str(message.text)=='❌Cancel'):
+        keyboard.row('➕ New ad', '📊 My ads')
+        keyboard.add('🏠 Menu')
+        title = bot.send_message(message.chat.id, "Your edit has been cancelled.", parse_mode='Markdown',reply_markup=keyboard)  
+    elif(len(str(message.text))>=10 and len(str(message.text))<=180):
+        mycursor = connector.cursor()
+        mycursor.execute("UPDATE adcampaign SET description = \'"+ str(message.text)+"\' WHERE campaignId = \'" + str(userAd)+"\'")
+        connector.commit()
+        keyboard.row('➕ New ad', '📊 My ads')
+        keyboard.add('🏠 Menu')
+        #print("MESSAGE " + str(message))
+        #bot.edit_message_text(chat_id=message.chat.id,message_id=message.message_id,text="HELLO", parse_mode='Markdown')
+
+        title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)
+    else:
+        editAdDescriptionMenu(message,userAd)
+
+
+def editAdTitleMenu(message, userAd):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row('❌Cancel')
+    title = bot.send_message(message.chat.id, "Enter the new title for your ad: \n\nIt must be between *5* and *80* characters.", parse_mode='Markdown',
+                     reply_markup=keyboard)
+    bot.register_next_step_handler(message=message, userAd=userAd, callback=editAdTitleInput)
+
+def editAdTitleInput(message,userAd):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+
+    if(str(message.text)=='❌Cancel'):
+        keyboard.row('➕ New ad', '📊 My ads')
+        keyboard.add('🏠 Menu')
+        title = bot.send_message(message.chat.id, "Your edit has been cancelled.", parse_mode='Markdown',reply_markup=keyboard)  
+    elif(len(str(message.text))>=5 and len(str(message.text))<=80):
+        mycursor = connector.cursor()
+        mycursor.execute("UPDATE adcampaign SET title = \'"+ str(message.text)+"\' WHERE campaignId = \'" + str(userAd)+"\'")
+        connector.commit()
+        keyboard.row('➕ New ad', '📊 My ads')
+        keyboard.add('🏠 Menu')
+        #print("MESSAGE " + str(message))
+        #bot.edit_message_text(chat_id=message.chat.id,message_id=message.message_id,text="HELLO", parse_mode='Markdown')
+
+        title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)
+    else:
+        editAdTitleMenu(message,userAd)
 
 #inserts new user in the DB
 def insertUser(chatId,userAddress,country,username):
