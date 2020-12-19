@@ -10,55 +10,59 @@ from pycoingecko import CoinGeckoAPI
 from datetime import date
 import random
 
+
+# //////////////////////////////// SETTINGS ////////////////////////////////
+
 # DB CONNECTOR SINGLETON
 connector = dbConnector.connect()
 
-#BLOCK.IO TOKEN
+# BLOCK.IO
 version = 2
 block_io = BlockIo('60dc-be33-0b2d-4c44', 'telegrambot', version)
 
-#BOT TOKEN
+# BOT TOKEN
 token = '1315794495:AAHz5CVPLTqUE3OoTFaXe54ZmrMHHZjL1Rk'
+
 
 def getDogePrice():
     price = CoinGeckoAPI().get_price(ids='dogecoin', vs_currencies='usd')['dogecoin']['usd']
     return price
 
-#ADMIN LIST (telegram username)
-adminlist = ["IonutZuZu","userTest"]
 
-###WITHDRAW
-#minimum withdraw amount (in doge)
+# ADMIN LIST (telegram username)
+adminlist = ["IonutZuZu", "userTest"]
+
+# WITHDRAW
+# minimum withdraw amount (in doge)
 minwithdrawamount = 4
-#minimum amount that the user can deposit (in doge)
+# minimum deposit amount (in doge)
 mindepositamount = 1
 
-
-###CPC
-#minimum cpc amount
+# CPC
+# minimum CPC amount
 slowest = 0.0001/getDogePrice()
 faster = 0.0005/getDogePrice()
 fastest = 0.0015/getDogePrice()
-#maximum cpc amount, must be lower or equal to the dayly budgets minimum amount
-maxamount = 0.10/getDogePrice() 
+# maximum cpc amount, must be lower or equal to the daily budgets min amount
+maxamount = 0.10/getDogePrice()
 
 
-###DAILY BUDGET (the number on the left doesn't have to be equal to the number on the right, ONLY CHANGE THE NUMBER ON THE RIGHT!)
-#minimum daily budget amount
+# DAILY BUDGET
+# minimum daily budget amount
 cents10 = 0.11/getDogePrice()
+# daily budget buttons
 cents25 = 0.25/getDogePrice()
 cents100 = 1/getDogePrice()
 cents200 = 2/getDogePrice()
 cents500 = 5/getDogePrice()
 cents1000 = 10/getDogePrice()
-#maximum daily budget amount
+# maximum daily budget amount
 cents500000 = 500/getDogePrice()
 
+# COUNTRIES allowed
+countries = ["us", "en", "it", "id", "sg", "ru", "ng", "de", "vn", "nl", "ph", "in", "ve", "gb", "br", "au", "fi", "fr", "jp", "no", "my", "tr", "co", "ch", "ca", "mx", "ar", "ua", "es", "md", "eg", "bd", "mn", "cu", "th", "it", "ir"]
 
-###COUNTRIES
-countries = ["us","en","it","id","sg","ru","ng","de","vn","nl","ph","in","ve","gb","br","au","fi","fr","jp","no","my","tr","co","ch","ca","mx","ar","ua","es","md","eg","bd","mn","cu","th","it","ir"]
-
-
+# //////////////////////////////// COMMANDS ////////////////////////////////
 # Create the bot
 bot = telebot.TeleBot(token)
 
@@ -79,50 +83,60 @@ def start_message(message):
         pass
     startMenu(message)
 
+
 # Menu command
 @bot.message_handler(commands=['menu'])
 def menu_message(message):
     startMenu(message)
+
 
 # visit command
 @bot.message_handler(commands=['visit'])
 def visit_message(message):
     visitSitesMenu(message)
 
+
 # myads command
 @bot.message_handler(commands=['myads'])
 def myads_message(message):
     adsMenu(message)
+
 
 # newad command
 @bot.message_handler(commands=['newad'])
 def newad_message(message):
     createAdCampaign(message)
 
+
 # deposit command
 @bot.message_handler(commands=['deposit'])
 def deposit_message(message):
     depositMenu(message)
+
 
 # withdraw command
 @bot.message_handler(commands=['withdraw'])
 def withdraw_message(message):
     withdrawMenu(message)
 
+
 # history command
 @bot.message_handler(commands=['history'])
 def history_message(message):
     historyMenu(message)
+
 
 # referrals command
 @bot.message_handler(commands=['referrals'])
 def referrals_message(message):
     referralMenu(message)
 
+
 # cancel command
 @bot.message_handler(commands=['cancel'])
 def cancel_message(message):
     startMenu(message)
+
 
 # cancel command
 @bot.message_handler(commands=['admin'])
@@ -165,7 +179,7 @@ Here are all my commands:\n\n\
 Visit our FAQ (https://dogeclick.com/faq) page for more info.\
 Join our news channel at @DOGEClickUpdates 📢\
 For technical support, message @DOGEClickSupport 📞',
-                    parse_mode='Markdown', reply_markup=keyboard)
+            parse_mode='Markdown', reply_markup=keyboard)
 
 
 # @bot.message_handler(commands=['test'])
@@ -180,8 +194,8 @@ For technical support, message @DOGEClickSupport 📞',
 #    bot.send_message(
 #        message.chat.id, text="How much is 2 plus 2?", reply_markup=markup)
 
-#@bot.callback_query_handler(func=lambda call: True)
-#def query_handler(call):
+# @bot.callback_query_handler(func=lambda call: True)
+# def query_handler(call):
 #    bot.answer_callback_query(
 #        callback_query_id=call.id, text='Answer accepted!')
 #    answer = 'You made a mistake'
@@ -220,7 +234,9 @@ def send_text(message):
     elif message.text.lower() == '➕ new ad':
         createAdCampaign(message)
 
-# Menus
+
+# //////////////////////////////// MENUS ////////////////////////////////
+# Visit Sites Menu
 def visitSitesMenu(message):
     markup = telebot.types.InlineKeyboardMarkup()
 
@@ -238,24 +254,26 @@ def visitSitesMenu(message):
     bot.send_message(
         message.chat.id, text=""+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
 
+
+# return an ad
 def getRandomAd(message):
-    #50% to get a high paying ad (fasters), 30% to get a medium paying ad (faster), 20% to get a low paying ad(slow)
+    # 50% to get a high paying ad (fasters), 30% to get a medium paying ad (faster), 20% to get a low paying ad(slow)
     randomPaying = (random.randint(0, 9))
     if (randomPaying >= 0 and randomPaying <= 4):
-        #high paying
-        #30% to 0-10s, 25% to 10-20s, 20% to 20-30s, 15% to 30-40s, 5% to 40-50s, 5% to 50-60s. 
-        randomSeconds = (random.randint(0, 99)) #fastest paying and <= 10 s
-        if(randomSeconds >= 0 and randomSeconds <= 29):   #fastest paying and <= 10 s
+        # HIGH PAYING
+        # 30% to 0-10s, 25% to 10-20s, 20% to 20-30s, 15% to 30-40s, 5% to 40-50s, 5% to 50-60s. 
+        randomSeconds = (random.randint(0, 99))  # fastest paying and <= 10 s
+        if(randomSeconds >= 0 and randomSeconds <= 29):  # fastest paying and <= 10 s
             seconds = 10
-        elif(randomSeconds >= 30 and randomSeconds <= 54): #fastest paying and <= 20 s
+        elif(randomSeconds >= 30 and randomSeconds <= 54):  # fastest paying and <= 20 s
             seconds = 20
-        elif(randomSeconds >= 55 and randomSeconds <= 74): #fastest paying and <= 30 s
+        elif(randomSeconds >= 55 and randomSeconds <= 74):  # fastest paying and <= 30 s
             seconds = 30
-        elif(randomSeconds >= 75 and randomSeconds <= 89): #fastest paying and <= 40 s
+        elif(randomSeconds >= 75 and randomSeconds <= 89):  # fastest paying and <= 40 s
             seconds = 40
-        elif(randomSeconds >= 90 and randomSeconds <= 94): #fastest paying and <= 50 s
+        elif(randomSeconds >= 90 and randomSeconds <= 94):  # fastest paying and <= 50 s
             seconds = 50
-        elif(randomSeconds >= 95 and randomSeconds <= 99): #fastest paying and <= 60 s
+        elif(randomSeconds >= 95 and randomSeconds <= 99):  # fastest paying and <= 60 s
             seconds = 60
         else:
             getRandomAd(message)
@@ -263,7 +281,7 @@ def getRandomAd(message):
         mycursor = connector.cursor()
         mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'fastest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
         ad = mycursor.fetchall()
-        
+
         if(str(ad) == "[]"):
             getRandomAd(message)
 
@@ -274,7 +292,7 @@ def getRandomAd(message):
 
             adnumber = 0
             for i in ad:
-                #print("adNumber = "+str(adnumber)+" "+str(ad[adnumber]))
+                # print("adNumber = "+str(adnumber)+" "+str(ad[adnumber]))
                 adnumber = adnumber + 1
 
             randomAdNumber = (random.randint(0, adnumber-1))
@@ -282,20 +300,20 @@ def getRandomAd(message):
             return ad[randomAdNumber]
 
     elif (randomPaying >= 5 and randomPaying <= 7):
-        #medium paying
-        #30% to 0-10s, 25% to 10-20s, 20% to 20-30s, 15% to 30-40s, 5% to 40-50s, 5% to 50-60s. 
+        # MEDIUM PAYING
+        # 30% to 0-10s, 25% to 10-20s, 20% to 20-30s, 15% to 30-40s, 5% to 40-50s, 5% to 50-60s. 
         randomSeconds = (random.randint(0, 99))
-        if(randomSeconds >= 0 and randomSeconds <= 29): #faster paying and <= 10 s
+        if(randomSeconds >= 0 and randomSeconds <= 29):  # faster paying and <= 10 s
             seconds = 10
-        elif(randomSeconds >= 30 and randomSeconds <= 54): #faster paying and <= 20 s
+        elif(randomSeconds >= 30 and randomSeconds <= 54):  # faster paying and <= 20 s
             seconds = 20
-        elif(randomSeconds >= 55 and randomSeconds <= 74): #faster paying and <= 30 s
+        elif(randomSeconds >= 55 and randomSeconds <= 74):  # faster paying and <= 30 s
             seconds = 30
-        elif(randomSeconds >= 75 and randomSeconds <= 89): #faster paying and <= 40 s
+        elif(randomSeconds >= 75 and randomSeconds <= 89):  # faster paying and <= 40 s
             seconds = 40
-        elif(randomSeconds >= 90 and randomSeconds <= 94): #faster paying and <= 50 s
+        elif(randomSeconds >= 90 and randomSeconds <= 94):  # faster paying and <= 50 s
             seconds = 50
-        elif(randomSeconds >= 95 and randomSeconds <= 99): #faster paying and <= 60 s
+        elif(randomSeconds >= 95 and randomSeconds <= 99):  # faster paying and <= 60 s
             seconds = 60
         else:
             getRandomAd(message)
@@ -311,31 +329,31 @@ def getRandomAd(message):
             print("SELECT * FROM adcampaign WHERE speed = \'faster\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
             print("FASTER")
             print("seconds = "+str(seconds))
-            
+
             adnumber = 0
             for i in ad:
-                #print("adNumber = "+str(adnumber)+" "+str(ad[adnumber]))
+                # print("adNumber = "+str(adnumber)+" "+str(ad[adnumber]))
                 adnumber = adnumber + 1
 
             randomAdNumber = (random.randint(0, adnumber-1))
             print("ad selected = "+str(ad[randomAdNumber]))
             return ad[randomAdNumber]
-        
+
     elif (randomPaying >= 8 and randomPaying <= 9):
-        #lowpaying
-        #30% to 0-10s, 25% to 10-20s, 20% to 20-30s, 15% to 30-40s, 5% to 40-50s, 5% to 50-60s.
+        # LOW PAYING
+        # 30% to 0-10s, 25% to 10-20s, 20% to 20-30s, 15% to 30-40s, 5% to 40-50s, 5% to 50-60s.
         randomSeconds = (random.randint(0, 99))
-        if(randomSeconds >= 0 and randomSeconds <= 29): #slowest paying and <= 10 s
+        if(randomSeconds >= 0 and randomSeconds <= 29):  # slowest paying and <= 10 s
             seconds = 10
-        elif(randomSeconds >= 30 and randomSeconds <= 54): #slowest paying and <= 20 s
+        elif(randomSeconds >= 30 and randomSeconds <= 54):  # slowest paying and <= 20 s
             seconds = 20
-        elif(randomSeconds >= 55 and randomSeconds <= 74): #slowest paying and <= 30 s
+        elif(randomSeconds >= 55 and randomSeconds <= 74):  # slowest paying and <= 30 s
             seconds = 30
-        elif(randomSeconds >= 75 and randomSeconds <= 89): #slowest paying and <= 40 s
+        elif(randomSeconds >= 75 and randomSeconds <= 89):  # slowest paying and <= 40 s
             seconds = 40
-        elif(randomSeconds >= 90 and randomSeconds <= 94): #slowest paying and <= 50 s
+        elif(randomSeconds >= 90 and randomSeconds <= 94):  # slowest paying and <= 50 s
             seconds = 50
-        elif(randomSeconds >= 95 and randomSeconds <= 99): #slowest paying and <= 60 s
+        elif(randomSeconds >= 95 and randomSeconds <= 99):  # slowest paying and <= 60 s
             seconds = 60
             getRandomAd(message)
 
@@ -350,17 +368,17 @@ def getRandomAd(message):
             print("SELECT * FROM adcampaign WHERE speed = \'slowest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
             print("SLOW")
             print("seconds = "+str(seconds))
-            
+
             adnumber = 0
             for i in ad:
-                #print("adNumber = "+str(adnumber)+" "+str(ad[adnumber]))
+                # print("adNumber = "+str(adnumber)+" "+str(ad[adnumber]))
                 adnumber = adnumber + 1
 
             randomAdNumber = (random.randint(0, adnumber-1))
             print("ad selected = "+str(ad[randomAdNumber]))
             return ad[randomAdNumber]
-        
-    else: 
+    # if the first time you dont find an ad with the random settings, repeat with different settings until you find one
+    else:
         getRandomAd(message)
 
 
@@ -373,13 +391,15 @@ def startMenu(message):
                      '🔥 Welcome to *EARN DOGE Today* Bot! 🔥 \n\nThis bot lets you earn Dogecoin by completing simple tasks. \n\nPress 🖥 *Visit sites* to earn by clicking links Press \n\nYou can also create your own ads with /newad. Use the /help command for more info.',
                      parse_mode='Markdown', reply_markup=keyboard)
 
+
 def createReferralCode(message):
     letters = string.ascii_letters
     result_str = ''.join(random.choice(letters) for i in range(8))
 
     mycursor = connector.cursor()
-    mycursor.execute('UPDATE user SET referral = \"'+ result_str +'\"  WHERE username = \''+ str(message.chat.username)+'\'')
+    mycursor.execute('UPDATE user SET referral = \"' + result_str + '\"  WHERE username = \'' + str(message.chat.username) + '\'')
     connector.commit()
+
 
 def referralMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -391,11 +411,12 @@ def referralMenu(message):
                     'You have *0* referrals, and earned *0* DOGE. \nTo refer people, send them to: \n\n'+getReferralCode(message.chat.username)+' \n\nYou will earn *15%* of each user\'s earnings from tasks, and *1%* of DOGE they spend on ads.',
                     parse_mode='Markdown', reply_markup=keyboard)
 
+
 def adsMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     markupEnabled = telebot.types.InlineKeyboardMarkup()
     markupDisabled = telebot.types.InlineKeyboardMarkup()
-    
+
     keyboard.row('➕ New ad', '📊 My ads')
     keyboard.add('🏠 Menu')
 
@@ -406,10 +427,11 @@ def adsMenu(message):
     markupDisabled.add(telebot.types.InlineKeyboardButton(
                     text='✏️ Edit', callback_data="editAd"), telebot.types.InlineKeyboardButton(
                     text='🚫 Disable', callback_data="changeAdStateDisabled"))
-
+    # if the user DESN'T have any ads
     if checkUserAds(message.chat.username) == 0:
         bot.send_message(message.chat.id, "You don't have any ad campaigns yet.", parse_mode='Markdown',
                      reply_markup=keyboard)
+    # if the user HAS ads show all of them
     else:
         bot.send_message(message.chat.id, "You currently have *" +str(checkUserAds(message.chat.username))+"* Ads", parse_mode='Markdown',
                          reply_markup=keyboard)
@@ -439,31 +461,35 @@ def adsMenu(message):
                
                 adsString = ""
 
+# ///////////////////////// CREATE NEW AD ///////////////////////
 def cancelAdMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row('➕ New ad', '📊 My ads')
     keyboard.add('🏠 Menu')
-    bot.send_message(message.chat.id, "Your ad has been canceled.", parse_mode='Markdown',reply_markup=keyboard)
+    bot.send_message(message.chat.id, "Your ad has been canceled.", parse_mode='Markdown', reply_markup=keyboard)
+
 
 def createAdCampaign(message):
     print('created new campaign')
     newAdUrlMenu(message)
 
+
 def newAdUrlMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row('❌Cancel')
     url = bot.send_message(message.chat.id, "Enter the URL to send traffic to: \n\nIt should begin with https:// or http://", parse_mode='Markdown',
-                     reply_markup=keyboard)
+                    reply_markup=keyboard)
     bot.register_next_step_handler(message=message, callback=addUrl)
 
+
 def addUrl(message):
-    if(str(message.text)=='❌Cancel'):
+    if(str(message.text) == '❌Cancel'):
         cancelAdMenu(message)
     else:
         try:
             if requests.get(str(message.text)).status_code == 200:
-                valid=validators.url(str(message.text)) 
-                if(valid==True):
+                valid = validators.url(str(message.text))
+                if(valid == True):
                     newAdTitleMenu(message, str(message.text))
                 elif(str(message.text) == '❌Cancel'):
                     cancelAdMenu(message)
@@ -473,88 +499,95 @@ def addUrl(message):
                 newAdUrlMenu(message)
         except:
             newAdUrlMenu(message)
-#todo if url has weird characters it breakes because of markdown
+# todo if url has weird characters it breakes because of markdown
 
-def newAdTitleMenu(message,url):
+def newAdTitleMenu(message, url):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('⏭️ Skip','❌Cancel')
+    keyboard.row('⏭️ Skip', '❌Cancel')
     title = bot.send_message(message.chat.id, "Enter a title for your ad: \n\nIt must be between *5* and *80* characters. \n\nPress \"Skip\" to use the site's title for this ad.", parse_mode='Markdown',
                      reply_markup=keyboard)
-    bot.register_next_step_handler(message=message, url=url , callback=addTitle)
+    bot.register_next_step_handler(message=message, url=url, callback=addTitle)
 
-def addTitle(message,url):
-    if(str(message.text)=='❌Cancel'):
+
+def addTitle(message, url):
+    if(str(message.text) == '❌Cancel'):
         cancelAdMenu(message)
-    elif(len(str(message.text))>=5 and len(str(message.text))<=80):
-        newAdDescriptionMenu(message,url,str(message.text))
+    elif(len(str(message.text)) >= 5 and len(str(message.text)) <= 80):
+        newAdDescriptionMenu(message, url, str(message.text))
     else:
-        newAdTitleMenu(message,url)
+        newAdTitleMenu(message, url)
 
-def newAdDescriptionMenu(message,url,adtitle):
+
+def newAdDescriptionMenu(message, url, adtitle):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('⏭️ Skip','❌Cancel')
+    keyboard.row('⏭️ Skip', '❌Cancel')
     title = bot.send_message(message.chat.id, "Enter a description for your ad:\n\nIt must be between *10* and *180* characters. \n\nPress \"Skip\" to use the site's title for this ad.", parse_mode='Markdown',
                      reply_markup=keyboard)
     bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, callback=addDescription)
 
-def addDescription(message,url,adtitle):
-    if(str(message.text)=='❌Cancel'):
-        cancelAdMenu(message)
-    elif(len(str(message.text))>=10 and len(str(message.text))<=180):
-        newAdNsfwMenu(message,url,adtitle,str(message.text))
-    else:
-        newAdDescriptionMenu(message,url,adtitle)
 
-def newAdNsfwMenu(message,url,adtitle,description):
+def addDescription(message, url, adtitle):
+    if(str(message.text) == '❌Cancel'):
+        cancelAdMenu(message)
+    elif(len(str(message.text)) >= 10 and len(str(message.text)) <= 180):
+        newAdNsfwMenu(message, url, adtitle, str(message.text))
+    else:
+        newAdDescriptionMenu(message, url, adtitle)
+
+
+def newAdNsfwMenu(message, url, adtitle, description):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('✅ Yes','🚫 No')
+    keyboard.row('✅ Yes', '🚫 No')
     keyboard.row('❌Cancel')
     title = bot.send_message(message.chat.id, "Does your advertisement contain *pornographic / NSFW* content?", parse_mode='Markdown',
                      reply_markup=keyboard)
     bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, description=description, callback=addNsfw)
 
-def addNsfw(message,url,adtitle,description):
-    if(str(message.text)=='❌Cancel'):
+
+def addNsfw(message, url, adtitle, description):
+    if(str(message.text) == '❌Cancel'):
         cancelAdMenu(message)
     elif(message.text == '✅ Yes'):
-        newAdGeotargetingMenu(message,url,adtitle,description, 1)
+        newAdGeotargetingMenu(message, url, adtitle, description, 1)
     elif(message.text == '🚫 No'):
-        newAdGeotargetingMenu(message,url,adtitle,description, 0)      
+        newAdGeotargetingMenu(message, url, adtitle, description, 0)
     else:
-        newAdNsfwMenu(message,url,adtitle,description)
+        newAdNsfwMenu(message, url, adtitle, description)
 
-def newAdGeotargetingMenu(message,url,adtitle,description,nsfw):
+
+def newAdGeotargetingMenu(message, url, adtitle, description, nsfw):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('✅ Yes','🚫 No')
+    keyboard.row('✅ Yes', '🚫 No')
     keyboard.row('❌Cancel')
-    title = bot.send_message(message.chat.id, "Do you want to use Geotargeting? 🌍\n\n If enabled, only users from certain countries will see your ad." , parse_mode='Markdown', reply_markup=keyboard)
+    title = bot.send_message(message.chat.id, "Do you want to use Geotargeting? 🌍\n\n If enabled, only users from certain countries will see your ad.", parse_mode='Markdown', reply_markup=keyboard)
     bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, description=description, nsfw=nsfw, callback=addGeotargeting)
 
-def addGeotargeting(message,url,adtitle,description,nsfw):
-    if(str(message.text)=='❌Cancel'):
+
+def addGeotargeting(message, url, adtitle, description, nsfw):
+    if(str(message.text) == '❌Cancel'):
         cancelAdMenu(message)
     elif(message.text == '✅ Yes'):
-        newAdGeotargetingMenuAccept(message,url,adtitle,description,nsfw)
+        newAdGeotargetingMenuAccept(message, url, adtitle, description, nsfw)
     elif(message.text == '🚫 No'):
-        newAdSecondsMenu(message,url,adtitle,description,nsfw,'xx')      
+        newAdSecondsMenu(message, url, adtitle, description, nsfw, 'xx') # xx means no country selected
     else:
-        newAdGeotargetingMenu(message,url,adtitle,description,nsfw)
+        newAdGeotargetingMenu(message, url, adtitle, description, nsfw)
 
-def newAdGeotargetingMenuAccept(message,url,adtitle,description,nsfw):
+def newAdGeotargetingMenuAccept(message, url, adtitle, description, nsfw):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row('❌Cancel')   
     title = bot.send_message(message.chat.id, "Enter the two character country code(s) you want to target your ad to, separated by commas: \n\nExample: US, DE, GB, FR \n\nFor a list of countries click here (https://dogeclick.com/countries)." , parse_mode='Markdown', reply_markup=keyboard)
     bot.register_next_step_handler(message=message, url=url, adtitle=adtitle, description=description, nsfw=nsfw,  callback= addAcceptGeotargeting )
 
 def addAcceptGeotargeting(message,url,adtitle,description,nsfw):
-    if(str(message.text)=='❌Cancel'):
+    if(str(message.text) == '❌Cancel'):
         cancelAdMenu(message)
         pass
 
     result = [x.strip() for x in message.text.split(',')]
     result = [x.lower() for x in result]
-    print("user inserted countries = "+str(result))
-    print("count 0 = "+str(result[0]))
+    print("user inserted countries = " + str(result))
+    print("count 0 = " + str(result[0]))
     usercountries = ""
     for i in result:
             if i in countries:
@@ -716,6 +749,7 @@ def showInsertedAd(message):
     #then it says Your ad has been updated.
 
 
+# ///////////////////////// MENUS ////////////////////////
 
 def balanceMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -793,6 +827,8 @@ def settingsMenu(message):
             bot.send_message(
             message.chat.id, text="NSFW/pornographic Ads are currently ❌ *Disabled*", reply_markup=markup, parse_mode='Markdown')
 
+# //////////////////////// EDIT AD AFTER CREATION /////////////////////////////////
+
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
         keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -848,13 +884,12 @@ def query_handler(call):
 
             editKeyboard = telebot.types.InlineKeyboardMarkup()
             editKeyboard.add(telebot.types.InlineKeyboardButton(
-            text='✏️ Edit', callback_data="editAdEnabled"), telebot.types.InlineKeyboardButton(
+            text='✏️ Edit', callback_data="editAd"), telebot.types.InlineKeyboardButton(
             text='🚫 Disable', callback_data="changeAdStateDisabled"))
             bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=editKeyboard)
             
         elif call.data == 'changeAdStateDisabled':      
-            
-            
+                        
             print("changeAdStateDisabled")
             print("AD user NR = "+str(str(call.message.text).split("#")[1].split(" ")[0]))
             print("username = "+str(call.message.chat.username))
@@ -879,11 +914,10 @@ def query_handler(call):
 
             editKeyboard = telebot.types.InlineKeyboardMarkup()
             editKeyboard.add(telebot.types.InlineKeyboardButton(
-            text='✏️ Edit', callback_data="editAdEnabled"), telebot.types.InlineKeyboardButton(
+            text='✏️ Edit', callback_data="editAd"), telebot.types.InlineKeyboardButton(
             text='✅ Enable', callback_data="changeAdStateEnabled"))
             bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=editKeyboard)
             
-
         elif call.data == 'editAd':
 
             editKeyboard = telebot.types.InlineKeyboardMarkup()
@@ -900,7 +934,6 @@ def query_handler(call):
             text='⬅️ Back', callback_data="goAdBack"), telebot.types.InlineKeyboardButton(
             text='🗑️ Delete', callback_data="deleteAd"))
 
-            
             print("AD user NR = "+str(str(call.message.text).split("#")[1].split(" ")[0]))
             print("Message ID = "+str(call.message.message_id))
             bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=editKeyboard)
@@ -921,6 +954,85 @@ def query_handler(call):
             print("USER AD = "+str(userAd))
             editAdDescriptionMenu(call.message, userAd)
 
+        elif call.data == 'editAdUrl':
+            print("EDIT AD Url")
+            print("AD user NR = "+str(str(call.message.text).split("#")[1].split(" ")[0]))
+            print("username = "+str(call.message.chat.username))
+            userAd = getUserAds(call.message.chat.username)[int(str(call.message.text).split("#")[1].split(" ")[0])-1][0]
+            print("USER AD = "+str(userAd))
+            editAdUrlMenu(call.message, userAd)
+
+        elif call.data == 'editAdGeotargeting':
+            print("EDIT AD Geotargeting")
+            print("AD user NR = "+str(str(call.message.text).split("#")[1].split(" ")[0]))
+            print("username = "+str(call.message.chat.username))
+            userAd = getUserAds(call.message.chat.username)[int(str(call.message.text).split("#")[1].split(" ")[0])-1][0]
+            print("USER AD = "+str(userAd))
+            editAdGeotagetingMenu(call.message, userAd)
+
+        elif call.data == 'editAdCpc':
+            print("EDIT AD CPC")
+            print("AD user NR = "+str(str(call.message.text).split("#")[1].split(" ")[0]))
+            print("username = "+str(call.message.chat.username))
+            userAd = getUserAds(call.message.chat.username)[int(str(call.message.text).split("#")[1].split(" ")[0])-1][0]
+            print("USER AD = "+str(userAd))
+            editAdCpcMenu(call.message, userAd)
+
+        elif call.data == 'editAdBudget':
+            print("EDIT AD Budget")
+            print("AD user NR = "+str(str(call.message.text).split("#")[1].split(" ")[0]))
+            print("username = "+str(call.message.chat.username))
+            userAd = getUserAds(call.message.chat.username)[int(str(call.message.text).split("#")[1].split(" ")[0])-1][0]
+            print("USER AD = "+str(userAd))
+            editAdBudgetMenu(call.message, userAd)
+
+        elif call.data == 'goAdBack':
+            
+            print(call.message)
+            if (str(call.message).find('Enabled ✅') == -1):
+                editKeyboard = telebot.types.InlineKeyboardMarkup()
+                editKeyboard.add(telebot.types.InlineKeyboardButton(
+                text='✏️ Edit', callback_data="editAd"), telebot.types.InlineKeyboardButton(
+                text='✅ Enable', callback_data="changeAdStateEnabled"))
+                bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=editKeyboard)
+            else:
+                editKeyboard = telebot.types.InlineKeyboardMarkup()
+                editKeyboard.add(telebot.types.InlineKeyboardButton(
+                text='✏️ Edit', callback_data="editAd"), telebot.types.InlineKeyboardButton(
+                text='🚫 Disable', callback_data="changeAdStateDisabled"))
+                bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=editKeyboard)           
+
+        elif call.data == 'deleteAd':
+                campaign = str(str(call.message.text).split("#")[1].split(" ")[0])
+                print("username = "+str(call.message.chat.username))
+                userAd = getUserAds(call.message.chat.username)[int(str(call.message.text).split("#")[1].split(" ")[0])-1][0]
+                print("USER AD = "+str(userAd))
+                newMessage = "*Campaign#"+str(campaign)+" *\n\nAre you sure you want to *delete* this ad?\n\n*This action cannot be undone.*"
+                bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=newMessage, parse_mode='Markdown')
+                editKeyboard = telebot.types.InlineKeyboardMarkup()
+                editKeyboard.add(telebot.types.InlineKeyboardButton(
+                text='✅ Yes', callback_data="deleteYes"), telebot.types.InlineKeyboardButton(
+                text='❌ Cancel', callback_data="deleteNo"))
+                bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=editKeyboard)           
+                #todo deleteNo
+        elif call.data == 'deleteYes':
+            
+            print("AD user NR = "+str(str(call.message.text).split("#")[1].split(" ")[0]))
+            print("username = "+str(call.message.chat.username))
+            userAd = getUserAds(call.message.chat.username)[int(str(call.message.text).split("#")[1].split(" ")[0])-1][0]
+            print("USER AD = "+str(userAd))
+            editAdDelete(call.message, userAd)
+
+            newMessage = "*Your Ad has been deleted.*"
+            bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=newMessage, parse_mode='Markdown')               
+                        
+
+def editAdDelete(message, userAd):
+    print("deleted campaign id = "+str(userAd))
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    mycursor = connector.cursor()
+    mycursor.execute("DELETE FROM adcampaign WHERE campaignId = \'" + str(userAd)+"\'")
+    connector.commit()   
 
 def editAdDescriptionMenu(message, userAd):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -949,7 +1061,6 @@ def editAdDescriptionInput(message,userAd):
     else:
         editAdDescriptionMenu(message,userAd)
 
-
 def editAdTitleMenu(message, userAd):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row('❌Cancel')
@@ -957,7 +1068,7 @@ def editAdTitleMenu(message, userAd):
                      reply_markup=keyboard)
     bot.register_next_step_handler(message=message, userAd=userAd, callback=editAdTitleInput)
 
-def editAdTitleInput(message,userAd):
+def editAdTitleInput(message, userAd):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
 
     if(str(message.text)=='❌Cancel'):
@@ -969,14 +1080,194 @@ def editAdTitleInput(message,userAd):
         mycursor.execute("UPDATE adcampaign SET title = \'"+ str(message.text)+"\' WHERE campaignId = \'" + str(userAd)+"\'")
         connector.commit()
         keyboard.row('➕ New ad', '📊 My ads')
-        keyboard.add('🏠 Menu')
-        #print("MESSAGE " + str(message))
-        #bot.edit_message_text(chat_id=message.chat.id,message_id=message.message_id,text="HELLO", parse_mode='Markdown')
-
+        keyboard.add('🏠 Menu')     
         title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)
     else:
         editAdTitleMenu(message,userAd)
 
+def editAdUrlMenu(message, userAd):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row('❌Cancel')
+    title = bot.send_message(message.chat.id, "Enter the new URL for your ad:\n\nIt should begin with https:// or http://", parse_mode='Markdown',
+                     reply_markup=keyboard)
+    bot.register_next_step_handler(message=message, userAd=userAd, callback=editAdUrlInput)
+
+def editAdUrlInput(message,userAd):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    
+    if(str(message.text)=='❌Cancel'):
+        keyboard.row('➕ New ad', '📊 My ads')
+        keyboard.add('🏠 Menu')
+        title = bot.send_message(message.chat.id, "Your edit has been cancelled.", parse_mode='Markdown',reply_markup=keyboard)  
+    else:
+        try:
+            if requests.get(str(message.text)).status_code == 200:
+                valid = validators.url(str(message.text))
+                if(valid == True):
+                    mycursor = connector.cursor()
+                    mycursor.execute("UPDATE adcampaign SET url = \'"+ str(message.text)+"\' WHERE campaignId = \'" + str(userAd)+"\'")
+                    connector.commit()
+                    keyboard.row('➕ New ad', '📊 My ads')
+                    keyboard.add('🏠 Menu')
+                    title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)
+                elif(str(message.text)=='❌Cancel'):
+                    keyboard.row('➕ New ad', '📊 My ads')
+                    keyboard.add('🏠 Menu')
+                    title = bot.send_message(message.chat.id, "Your edit has been cancelled.", parse_mode='Markdown',reply_markup=keyboard)  
+                else:
+                    editAdUrlMenu(message, userAd)
+            else:
+                editAdUrlMenu(message, userAd)
+        except:
+            editAdUrlMenu(message, userAd)
+
+
+def editAdGeotagetingMenu(message, userAd):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row('✅ Yes', '🚫 No')
+    keyboard.row('❌Cancel')
+ 
+    title = bot.send_message(message.chat.id, "Do you want to use Geotargeting? 🌍\n\n If enabled, only users from certain countries will see your ad.", parse_mode='Markdown',
+                     reply_markup=keyboard)
+    bot.register_next_step_handler(message=message, userAd=userAd, callback=editAdGeotagetingInput)
+
+def editAdGeotagetingInput(message, userAd):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+
+    if(str(message.text)=='❌Cancel'):
+        keyboard.row('➕ New ad', '📊 My ads')
+        keyboard.add('🏠 Menu')
+        title = bot.send_message(message.chat.id, "Your edit has been cancelled.", parse_mode='Markdown',reply_markup=keyboard)  
+    elif(message.text == '✅ Yes'):
+        newAdGeotargetingInputInput(message, userAd)
+    elif(message.text == '🚫 No'):
+        mycursor = connector.cursor()
+        mycursor.execute("UPDATE adcampaign SET country = \'xx\' WHERE campaignId = \'" + str(userAd)+"\'")
+        connector.commit()
+        keyboard.row('➕ New ad', '📊 My ads')
+        keyboard.add('🏠 Menu')     
+        title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)
+    else:
+        editAdGeotagetingMenu(message,userAd)
+
+def newAdGeotargetingInputInput(message, userAd):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row('❌Cancel')   
+    title = bot.send_message(message.chat.id, "Enter the two character country code(s) you want to target your ad to, separated by commas: \n\nExample: US, DE, GB, FR \n\nFor a list of countries click here (https://dogeclick.com/countries)." , parse_mode='Markdown', reply_markup=keyboard)
+    bot.register_next_step_handler(message=message, userAd=userAd, callback= newAdGeotargetingInputInputAccept )
+
+def newAdGeotargetingInputInputAccept(message, userAd):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    if(str(message.text)=='❌Cancel'):
+        keyboard.row('➕ New ad', '📊 My ads')
+        keyboard.add('🏠 Menu')
+        title = bot.send_message(message.chat.id, "Your edit has been cancelled.", parse_mode='Markdown',reply_markup=keyboard)  
+    else:
+        result = [x.strip() for x in message.text.split(',')]
+        result = [x.lower() for x in result]
+        print("user inserted countries = " + str(result))
+        print("count 0 = " + str(result[0]))
+        usercountries = ""
+        for i in result:
+            if i in countries:
+                print("result in = "+ i)
+                usercountries = usercountries + str(i)+","
+            else:
+                print("result not = "+ i)
+
+        if(usercountries == ""):
+            newAdGeotargetingInputInput(message, userAd)
+        else:
+            mycursor = connector.cursor()
+            mycursor.execute("UPDATE adcampaign SET country = \'" + usercountries + "\' WHERE campaignId = \'" + str(userAd)+"\'")
+            connector.commit()
+            keyboard.row('➕ New ad', '📊 My ads')
+            keyboard.add('🏠 Menu')     
+            title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)
+    
+
+def editAdCpcMenu(message, userAd):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row(str(slowest)[0:6]+' DOGE(slowest)',str(faster)[0:6]+' DOGE(faster)',str(fastest)[0:6]+' DOGE(fastest)')
+    keyboard.row('❌Cancel')
+    title = bot.send_message(message.chat.id, "What is the most you want to pay *per click?* \n\nThe higher your cost per click, the faster people will see your ad. \n\nThe minimum amount is *"+str(slowest)[0:6] +" DOGE*\n\nEnter a value in DOGE:", parse_mode='Markdown',
+                     reply_markup=keyboard)
+    bot.register_next_step_handler(message=message, userAd=userAd, callback=editAdCpcInput)
+
+def editAdCpcInput(message, userAd):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    try:        
+        if(str(message.text)=='❌Cancel'):
+            keyboard.row('➕ New ad', '📊 My ads')
+            keyboard.add('🏠 Menu')
+            title = bot.send_message(message.chat.id, "Your edit has been cancelled.", parse_mode='Markdown',reply_markup=keyboard)      
+        elif(float(str(message.text)[0:6]) >= float(str(slowest)[0:6]) and float(str(message.text)[0:6]) < float(str(faster)[0:6])):
+            speed = "slowest"
+            mycursor = connector.cursor()
+            mycursor.execute("UPDATE adcampaign SET cpc = \'" + str(message.text)[0:6] + "\' WHERE campaignId = \'" + str(userAd)+"\'")
+            connector.commit()
+            mycursor.execute("UPDATE adcampaign SET speed = \'" + speed + "\' WHERE campaignId = \'" + str(userAd)+"\'")
+            connector.commit()
+            keyboard.row('➕ New ad', '📊 My ads')
+            keyboard.add('🏠 Menu')     
+            title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)
+        elif(float(str(message.text)[0:6]) >= float(str(faster)[0:6]) and float(str(message.text)[0:6]) < float(str(fastest)[0:6])):
+            speed = "faster"
+            mycursor = connector.cursor()
+            mycursor.execute("UPDATE adcampaign SET cpc = \'" + str(message.text)[0:6] + "\' WHERE campaignId = \'" + str(userAd)+"\'")
+            connector.commit()
+            mycursor.execute("UPDATE adcampaign SET speed = \'" + speed + "\' WHERE campaignId = \'" + str(userAd)+"\'")
+            connector.commit()
+            keyboard.row('➕ New ad', '📊 My ads')
+            keyboard.add('🏠 Menu')     
+            title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)
+        elif(float(str(message.text)[0:6]) >= float(str(fastest)[0:6]) and float(str(message.text)[0:6]) <= float(str(maxamount)[0:6])):
+            speed = "fastest"
+            mycursor = connector.cursor()
+            mycursor.execute("UPDATE adcampaign SET cpc = \'" + str(message.text)[0:6] + "\' WHERE campaignId = \'" + str(userAd)+"\'")
+            connector.commit()
+            mycursor.execute("UPDATE adcampaign SET speed = \'" + speed + "\' WHERE campaignId = \'" + str(userAd)+"\'")
+            connector.commit()
+            keyboard.row('➕ New ad', '📊 My ads')
+            keyboard.add('🏠 Menu')     
+            title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)    
+        else:
+            editAdCpcMenu(message, userAd)
+    except ValueError:
+        editAdCpcMenu(message, userAd)
+
+
+def editAdBudgetMenu(message, userAd):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row(str(cents10).split('.')[0]+' DOGE($0.10)',str(cents25).split('.')[0]+' DOGE($0.25)',str(cents100).split('.')[0]+' DOGE($1.00)')
+    keyboard.row(str(cents200).split('.')[0]+' DOGE($2.00)',str(cents500).split('.')[0]+' DOGE($5.00)',str(cents1000).split('.')[0]+' DOGE($10.00)')
+    keyboard.row('❌Cancel')
+    title = bot.send_message(message.chat.id, "How much do you want to spend per day?\n\nThe minimum amount is *"+str(slowest)[0:5]+" DOGE*\n\nEnter a value in DOGE:", parse_mode='Markdown',
+                     reply_markup=keyboard)
+    bot.register_next_step_handler(message=message, userAd=userAd, callback=editAdBudgetMenuInput)
+
+def editAdBudgetMenuInput(message,userAd):
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+
+    try:
+        if(str(message.text)=='❌Cancel'):
+            keyboard.row('➕ New ad', '📊 My ads')
+            keyboard.add('🏠 Menu')
+            title = bot.send_message(message.chat.id, "Your edit has been cancelled.", parse_mode='Markdown',reply_markup=keyboard)  
+        elif(float(str(message.text).split(' ')[0]) >= float(cents10) and float(str(message.text).split(' ')[0]) <= float(cents500000)):
+            print("fatto "+ str(message.text).split(' ')[0])
+            mycursor = connector.cursor()
+            mycursor.execute("UPDATE adcampaign SET dailyBudget = \'"+ str(message.text).split(' ')[0]+"\' WHERE campaignId = \'" + str(userAd)+"\'")
+            connector.commit()
+            keyboard.row('➕ New ad', '📊 My ads')
+            keyboard.add('🏠 Menu')
+            title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)        
+        else:
+            editAdBudgetMenu(message, userAd)
+    except ValueError:        
+        editAdBudgetMenu(message, userAd)
+                    
+# //////////////////////////////////// USER FUNCTIONS ///////////////////////////////
 #inserts new user in the DB
 def insertUser(chatId,userAddress,country,username):
 
