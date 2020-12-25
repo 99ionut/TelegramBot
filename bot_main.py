@@ -16,12 +16,10 @@ connector = dbConnector.connect()
 
 # BLOCK.IO
 version = 2
-block_io = BlockIo('6c91-218b-37d0-5c1a', 'telegrambot', version)
+block_io = BlockIo('8383-cae2-01f4-720f', 'telegrambot', version)
 
 # BOT TOKEN
 token = '1315794495:AAHz5CVPLTqUE3OoTFaXe54ZmrMHHZjL1Rk'
-
-block_io.create_notification(type='account', url='http://74d2ba887f4b.ngrok.io/webhook')
 
 def serverUpdate(request):
     print("ricevuto update")
@@ -770,12 +768,66 @@ def depositMenu(message):
                      parse_mode='Markdown',
                      reply_markup=keyboard)
 
+# ///////////////// WITHDRAW
 def withdrawMenu2(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row('❌ Cancel')
     bot.send_message(message.chat.id, "Your balance: *" + str(getUserBalance(message.chat.username)) + " DOGE*\n\nTo withdraw, enter your Dogecoin address:",
                      parse_mode='Markdown',
                      reply_markup=keyboard)
+    bot.register_next_step_handler(message=message, callback=withdrawAddress)
+
+def withdrawAddress(message):
+    print(message.text)
+    validate = block_io.is_valid_address(address=message.text) #must address be on the same network (Doge testnet or Doge official ecc..)
+    print(validate["data"]["is_valid"]) 
+    if(str(validate["data"]["is_valid"]) == "True"): #todo inputs break on special characters like ()'ecc.. add try catch everywhere?
+        print("ok withdraw")
+        withdrawAddressConfirm(message)
+    else:     
+        print("invalid withdraw")
+        withdrawMenu2(message)
+
+def withdrawAddressConfirm(message):
+    address = message
+    keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    keyboard.row('❌ Cancel')
+    bot.send_message(message.chat.id, "Enter the amount to withdraw: \n\n Minimum: *" + str(minwithdrawamount) +" DOGE*",
+                     parse_mode='Markdown',
+                     reply_markup=keyboard)
+    bot.register_next_step_handler(message=message, address=address, callback=withdrawAddressAmount)
+
+def withdrawAddressAmount(message,address):
+    amount = message
+    print("amount to withdraw = "+str(amount.text))
+    print("address to withdraw = "+str(address.text))
+    userBalance = getUserBalance(amount.chat.username)
+    print("user balance = "+str(userBalance))
+    if( float(amount.text) >= float(minwithdrawamount) and float(amount.text) <= float(userBalance) ):
+        keyboard = telebot.types.ReplyKeyboardMarkup(True)
+        keyboard.row('✅ Confirm','❌ Cancel')
+        bot.send_message(message.chat.id, "Are you sure you want to send *"+ str(amount.text) + " DOGE* to *"+ str(address.text) +"* ? \n\nYou will be charged a blockchain fee of 0.056 DOGE.",
+                     parse_mode='Markdown',
+                     reply_markup=keyboard)
+        bot.register_next_step_handler(message=message, amount = amount, address = address, callback=withdrawAddressSend)
+    else:
+        withdrawAddressConfirm(address)
+
+def withdrawAddressSend(message,amount,address):
+    if(str(message.text)=='❌ Cancel'):
+        cancelWithdrawMenu(message) 
+    elif(str(message.text)=='✅ Confirm'):
+        keyboard = telebot.types.ReplyKeyboardMarkup(True)
+        keyboard.row('➕ Deposit', '💵 Withdraw')
+        keyboard.add('💰 Balance', '🕑 History')
+        keyboard.add('🏠 Menu')
+        title = bot.send_message(message.chat.id, "✅ Your withdrawal has been requested!\n\nUse the /history command to view your transaction.", parse_mode='Markdown',reply_markup=keyboard)  
+    
+    else:
+        withdrawAddressAmount(message,address)
+
+#todo max amount of ads a day
+#todo max amount of high paying ads
 
 def withdrawMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -798,6 +850,8 @@ def cancelWithdrawMenu(message):
     bot.send_message(message.chat.id, "Your withdrawal has been canceled.",
                      parse_mode='Markdown',
                      reply_markup=keyboard)
+
+# \\\\\\\\\\\\\ END WITHDRAW
 
 def historyMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -1328,8 +1382,11 @@ def getReferralCode(username):
         else:
             return 0
 
-def getUserBalance(username):
-    balance = block_io.get_address_by(label=username)["data"]["available_balance"]
+def getUserBalance(username):   
+    mycursor = connector.cursor()
+    mycursor.execute("SELECT virtualBalance FROM user WHERE username = \'"+ username +"\'")  
+    balance = mycursor.fetchall()[0][0]  
+    connector.commit() #updates balance after being changed by the server, if not included it keeps the last value
     print(balance)
     return str(float(balance))
 
@@ -1342,8 +1399,6 @@ def getUserHistory(username):
     address = getUserAddress(username)
     history = "https://sochain.com/address/DOGETEST/"+address
     return history
-
-
 
 def getNsfw(username):
     mycursor = connector.cursor()

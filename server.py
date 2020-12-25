@@ -1,9 +1,21 @@
-import dbConnector
+import mysql.connector
 from flask import Flask, request, abort
+from block_io import BlockIo
+
+mainAccount = "2N1fJnGvvbLexRusQXet77fFAgoL6MuMRDx" #main account with all the founds
+version = 2
+block_io = BlockIo('8383-cae2-01f4-720f', 'telegrambot', version)
+
+def connect():
+    return mysql.connector.connect(
+        host = 'localhost',
+        user = 'telegrambot',
+        password = 'telegrambot',
+        database = 'telegrambot')
+
+connector = connect()
 
 app = Flask(__name__)
-connector = dbConnector.connect()
-
 
 #1) start server.py
 #2) from cmd in telegramBot ngrok http 5000
@@ -12,7 +24,6 @@ connector = dbConnector.connect()
 
 #in bot main once block_io.create_notification(type='account', url='http://785a748f02bb.ngrok.io/webhook')
 
-
 #block_io.enable_notification(notification_id='3614d812342f08eba83cfac8')
 #block_io.list_notifications(page='1')
 
@@ -20,30 +31,39 @@ connector = dbConnector.connect()
 def webhook():
     if request.method == 'POST':
         #print(request.json)
-        print("balance = "+str(float(request.json["data"]["balance_change"])))
-        try:
-            
+        try:           
             if(float(request.json["data"]["balance_change"]) >= 0):
-                print("positivo") #positive transactions (deposit)
-                #print(request.json)
-
-                address = str(request.json["data"]["address"])
-                updateUser(address)               
-                print("porcoddio")
+                print("positive") #positive transactions (deposit)
+                balance = float(request.json["data"]["balance_change"])
+                address = str(request.json["data"]["address"])             
+                updateUser(address,balance)
             else:
-                print("negativo") #negative transactions (withdraw)
+                #print("negative") #negative transactions (withdraw)
+                pass
         except:
-            print("richiesta non da block_io")
+            print("errore")
+              
         return 'success', 200
+        
     else:
         abort(400)
 
-def updateUser(address):
-    print("address = "+address)
-    mycursor = connector.cursor()
-    mycursor.execute("SELECT username FROM user WHERE address = "+ address)
-    user = mycursor.fetchall()
-    print("user sent = "+str(user))
+def updateUser(address,balance):
+        print("address = "+address)
+        print("recieved balance = "+str(balance))
+        
+        mycursor = connector.cursor()
+        mycursor.execute("SELECT virtualBalance FROM user WHERE address = \'"+ address +"\'")  
+        virtualBalance = mycursor.fetchall()
+        print("virtual Balance = "+str(virtualBalance[0][0]))
+        totalBalance = float(balance) + float(str(virtualBalance[0][0])) 
+        print("Total Balance = "+str(totalBalance))
+        mycursor = connector.cursor()
+        mycursor.execute("UPDATE user SET virtualBalance = \'"+ str(totalBalance) +"\'  WHERE address = \'" + address + "\'")
+        connector.commit()
+        block_io.withdraw_from_addresses(amounts="20", from_addresses="2N3YcfGc3ozvgUUkZgMQmpjzBVuofChhiLi", to_addresses=str(mainAccount))
+   
+    
 
 if __name__ == '__main__':
     app.run()
