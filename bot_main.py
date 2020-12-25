@@ -8,8 +8,6 @@ import validators
 import requests
 from pycoingecko import CoinGeckoAPI
 from datetime import date
-import random
-
 
 # //////////////////////////////// SETTINGS ////////////////////////////////
 
@@ -18,16 +16,20 @@ connector = dbConnector.connect()
 
 # BLOCK.IO
 version = 2
-block_io = BlockIo('60dc-be33-0b2d-4c44', 'telegrambot', version)
+block_io = BlockIo('6c91-218b-37d0-5c1a', 'telegrambot', version)
 
 # BOT TOKEN
 token = '1315794495:AAHz5CVPLTqUE3OoTFaXe54ZmrMHHZjL1Rk'
 
+block_io.create_notification(type='account', url='http://74d2ba887f4b.ngrok.io/webhook')
+
+def serverUpdate(request):
+    print("ricevuto update")
+    print(request.json)
 
 def getDogePrice():
     price = CoinGeckoAPI().get_price(ids='dogecoin', vs_currencies='usd')['dogecoin']['usd']
     return price
-
 
 # ADMIN LIST (telegram username)
 adminlist = ["IonutZuZu", "userTest"]
