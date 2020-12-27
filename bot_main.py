@@ -3,6 +3,7 @@ import telebot
 from block_io import BlockIo
 import string
 import random
+import hashlib
 import dbConnector
 import validators
 import requests
@@ -69,10 +70,21 @@ bot = telebot.TeleBot(token)
 # Start command
 @bot.message_handler(commands=['start'])
 def start_message(message):
-
-    print(message.text.replace('/start ', ''))
     chatId = message.chat.id
     if checkUserId(message.chat.username) == 1:  # if user id is new insert
+        referralRecieved = message.text.replace('/start ', '')
+        if (referralRecieved == ""): #todo test this
+            print("no referral inserted")
+        else:
+            mycursor = connector.cursor()
+            mycursor.execute("SELECT username FROM user WHERE referral = \'"+str(referralRecieved)+"\'")
+            userReferred = mycursor.fetchall()
+            if( userReferred[0][0] == ""):
+                print("invalid referral")
+            else:
+                mycursor.execute('UPDATE user SET referredBy = \"' + str(userReferred) + '\"  WHERE username = \'' + str(message.chat.username) + '\'')
+                connector.commit()
+
         print("user inserted")
         userAddress = block_io.get_new_address(label=message.chat.username)
         print(userAddress["data"]["address"])
@@ -240,19 +252,70 @@ def send_text(message):
 def visitSitesMenu(message):
     markup = telebot.types.InlineKeyboardMarkup()
 
-    ad = getRandomAd(message)
-    while (ad == None):
+    print("USER THAT WANTS AN AD = "+str(message.chat.username))
+    userWants = str(message.chat.username)
+
+    mycursor = connector.cursor()
+    mycursor.execute("SELECT lastAd FROM user WHERE username = \'"+userWants+"\'")
+    lastAd = mycursor.fetchall()
+    print("LAST AD = "+str(lastAd[0][0]))
+
+    if(str(lastAd[0][0]) == "-1"): #if there is no last ad give the user a new one
+        mycursor = connector.cursor() #expire previous links
+        mycursor.execute("DELETE FROM link WHERE username = \'" + userWants + "\'")
+        connector.commit()
+        print("expired previous links")
+
         ad = getRandomAd(message)
+        while (ad == None):
+            ad = getRandomAd(message)
 
-    print("RECIEVED AD = "+str(ad))
+        print("USER RECIEVED AD = "+str(ad[0]))
+        userGot = str(ad[0])
 
-    markup.add(telebot.types.InlineKeyboardButton(
-        text='🔎 Go to website', url=str(ad[8]), callback_data="goToWebsite"))
-    markup.add(telebot.types.InlineKeyboardButton(
-        text='🛑 Report', callback_data="reportAd"), telebot.types.InlineKeyboardButton(
-        text='⏭ Skip', callback_data="skipAd"))
-    bot.send_message(
-        message.chat.id, text=""+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
+        mycursor = connector.cursor()
+        mycursor.execute('UPDATE user SET lastAd = \"' + userGot + '\"  WHERE username = \'' + userWants + '\'')
+        connector.commit()
+
+        m = hashlib.md5()
+        m.update(userWants.encode('utf-8') + userGot.encode('utf-8'))
+        customLink = str(int(m.hexdigest(), 16))[0:12]
+        print("CUSTOM LINK = "+customLink)
+        print("added new valid link")
+                                  #also delete all if skip
+        mycursor = connector.cursor() #delete after the user visits the ad, use the unique value in the link to see the DB to see what user has to pay who
+        mycursor.execute("INSERT INTO link VALUES ( \'" + customLink + "\',\'" + userWants + "\',\'" + userGot + "\' )")
+        connector.commit()
+
+        markup.add(telebot.types.InlineKeyboardButton(
+            text='🔎 Go to website', url=str(ad[8]), callback_data="goToWebsite"))
+        markup.add(telebot.types.InlineKeyboardButton(
+            text='🛑 Report', callback_data="reportAd"), telebot.types.InlineKeyboardButton(
+            text='⏭ Skip', callback_data="skipAd"))
+        bot.send_message(
+        message.chat.id, text="custom link = i0nut.com/visit/"+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
+
+    else: #if there is a last ad show that one
+        print("last ad exists")
+        mycursor = connector.cursor()
+        mycursor.execute("SELECT * FROM adcampaign WHERE campaignId = \'"+str(lastAd[0][0])+"\'")
+        ad = mycursor.fetchall()
+        ad = ad[0]
+        print("LAST AD = "+str(ad))
+
+        mycursor = connector.cursor()
+        mycursor.execute("SELECT customLink FROM link WHERE username = \'"+userWants+"\'")
+        customLink = mycursor.fetchall()
+        print("LAST CUSTOM LINK = "+str(customLink[0][0]))
+        customLink = str(customLink[0][0])
+       
+        markup.add(telebot.types.InlineKeyboardButton(
+            text='🔎 Go to website', url=str(ad[8]), callback_data="goToWebsite"))
+        markup.add(telebot.types.InlineKeyboardButton(
+            text='🛑 Report', callback_data="reportAd"), telebot.types.InlineKeyboardButton(
+            text='⏭ Skip', callback_data="skipAd"))
+        bot.send_message(
+        message.chat.id, text="custom link = i0nut.com/visit/"+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
 
 
 # return an ad
@@ -393,8 +456,12 @@ def startMenu(message):
 
 
 def createReferralCode(message):
-    letters = string.ascii_letters
-    result_str = ''.join(random.choice(letters) for i in range(8))
+    #letters = string.ascii_letters
+    #result_str = ''.join(random.choice(letters) for i in range(8))
+
+    m = hashlib.md5()
+    m.update(str(message.chat.username).encode('utf-8'))
+    result_str = str(int(m.hexdigest(), 16))[0:8] #todo test thi
 
     mycursor = connector.cursor()
     mycursor.execute('UPDATE user SET referral = \"' + result_str + '\"  WHERE username = \'' + str(message.chat.username) + '\'')
@@ -824,7 +891,7 @@ def withdrawAddressSend(message,amount,address):
         title = bot.send_message(message.chat.id, "✅ Your withdrawal has been requested!\n\nUse the /history command to view your transaction.", parse_mode='Markdown',reply_markup=keyboard)  
     
     else:
-        withdrawAddressAmount(message,address)
+        cancelWithdrawMenu(message) 
 
 #todo max amount of ads a day
 #todo max amount of high paying ads
@@ -905,12 +972,23 @@ def query_handler(call):
             #bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
             bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)  #deletes reply markup keyboard
             bot.send_message(call.message.chat.id, "Skipping Task...",parse_mode='Markdown',reply_markup=keyboard)           
+            mycursor = connector.cursor()
+            mycursor.execute("UPDATE user SET lastAd = -1 WHERE username = \'" + str(call.message.chat.username)+'\'')
+            connector.commit()
             visitSitesMenu(call.message)
             print("AD SKIPPED")
         elif call.data == 'reportAd':
             #todo nrOfTimesReported in db for each ad an then you can see the most reported. If the customer support says its allowed set the nr to 0, if not remove the ad.
             #BASED ON THE CUSTOM URL which redirects the user to earndogetoday.com/visit/customurl which is created with the adid+url+userid, which is passed in the "call" object
             print(call)
+            mycursor = connector.cursor()
+            mycursor.execute("SELECT campaignId FROM link WHERE username = \'" + str(call.message.chat.username) +"\'")
+            reportedAd = mycursor.fetchall()
+            reportedAd = reportedAd[0][0]
+            print("reported Ad = "+str(reportedAd[0][0]))
+            mycursor.execute("UPDATE adcampaign SET reports = reports+1 WHERE campaignId = \'" + str(reportedAd)+"\'")
+            connector.commit()
+
             print("AD REPORTED")
         elif call.data == 'goToWebsite':
             print("goToWebsite")
