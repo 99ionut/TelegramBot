@@ -17,7 +17,7 @@ connector = dbConnector.connect()
 
 # BLOCK.IO
 version = 2
-block_io = BlockIo('8383-cae2-01f4-720f', 'telegrambot', version)
+block_io = BlockIo('3ca2-a0e8-2752-dfdc', 'telegrambot', version)
 
 # BOT TOKEN
 token = '1315794495:AAHz5CVPLTqUE3OoTFaXe54ZmrMHHZjL1Rk'
@@ -72,24 +72,30 @@ bot = telebot.TeleBot(token)
 def start_message(message):
     chatId = message.chat.id
     if checkUserId(message.chat.username) == 1:  # if user id is new insert
-        referralRecieved = message.text.replace('/start ', '')
-        if (referralRecieved == ""): #todo test this
-            print("no referral inserted")
-        else:
-            mycursor = connector.cursor()
-            mycursor.execute("SELECT username FROM user WHERE referral = \'"+str(referralRecieved)+"\'")
-            userReferred = mycursor.fetchall()
-            if( userReferred[0][0] == ""):
-                print("invalid referral")
-            else:
-                mycursor.execute('UPDATE user SET referredBy = \"' + str(userReferred) + '\"  WHERE username = \'' + str(message.chat.username) + '\'')
-                connector.commit()
 
         print("user inserted")
         userAddress = block_io.get_new_address(label=message.chat.username)
         print(userAddress["data"]["address"])
         insertUser(chatId, userAddress["data"]["address"],message.from_user.language_code, message.chat.username)
         createReferralCode(message)
+
+        referralRecieved = message.text.replace('/start ', '')
+        print("referral = "+str(referralRecieved))
+        if (referralRecieved == ""): 
+            print("no referral inserted")
+        else:
+            mycursor = connector.cursor()
+            mycursor.execute("SELECT username FROM user WHERE referral = \'"+str(referralRecieved)+"\'")
+            userReferred = mycursor.fetchall()
+            print("USER REFERRED = "+userReferred[0][0])
+            if( userReferred[0][0] == ""):
+                print("invalid referral")
+            else:
+                print("VALID referral")
+                print("username = "+str(message.chat.username))
+                mycursor.execute("UPDATE user SET referredBy = \'" + str(userReferred[0][0]) + "\'  WHERE username = \'" + str(message.chat.username) + "\'")
+                connector.commit()
+
     else:
         print("user not inserted")
         pass
@@ -293,7 +299,7 @@ def visitSitesMenu(message):
             text='🛑 Report', callback_data="reportAd"), telebot.types.InlineKeyboardButton(
             text='⏭ Skip', callback_data="skipAd"))
         bot.send_message(
-        message.chat.id, text="custom link = i0nut.com/visit/"+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
+        message.chat.id, text="custom link = http://localhost/earndogetoday/visit.php?ad="+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
 
     else: #if there is a last ad show that one
         print("last ad exists")
@@ -315,7 +321,7 @@ def visitSitesMenu(message):
             text='🛑 Report', callback_data="reportAd"), telebot.types.InlineKeyboardButton(
             text='⏭ Skip', callback_data="skipAd"))
         bot.send_message(
-        message.chat.id, text="custom link = i0nut.com/visit/"+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
+        message.chat.id, text="custom link = http://localhost/earndogetoday/visit.php?ad="+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
 
 
 # return an ad
@@ -456,12 +462,12 @@ def startMenu(message):
 
 
 def createReferralCode(message):
-    #letters = string.ascii_letters
-    #result_str = ''.join(random.choice(letters) for i in range(8))
+    letters = string.ascii_letters
+    result_str = ''.join(random.choice(letters) for i in range(8))
 
-    m = hashlib.md5()
-    m.update(str(message.chat.username).encode('utf-8'))
-    result_str = str(int(m.hexdigest(), 16))[0:8] #todo test thi
+    #m = hashlib.md5()
+    #m.update(str(message.chat.username).encode('utf-8'))
+    #result_str = str(int(m.hexdigest(), 16))[0:8] #todo test thi
 
     mycursor = connector.cursor()
     mycursor.execute('UPDATE user SET referral = \"' + result_str + '\"  WHERE username = \'' + str(message.chat.username) + '\'')
@@ -675,7 +681,7 @@ def newAdSecondsMenu(message,url,adtitle,description,nsfw,geotargeting): #todo s
 
         if ("X-Frame-Options" in str(r.headers)):
             print("can't use xframe")
-            newAdCpcMenu(message,url,adtitle,description,nsfw,geotargeting,str(10)) # default seconds
+            newAdCpcMenu(message,url,adtitle,description,nsfw,geotargeting,str(-1)) # default seconds
         else:
             print("xframe allowed")
             keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -692,7 +698,7 @@ def newAdSeconds(message,url,adtitle,description,nsfw,geotargeting):
     elif(message.text == '✅ Yes'):
         newAdSecondsMenuAccept(message,url,adtitle,description,nsfw,geotargeting)
     elif(message.text == '🚫 No'):
-        newAdCpcMenu(message,url,adtitle,description,nsfw,geotargeting,str(10))    # default seconds  
+        newAdCpcMenu(message,url,adtitle,description,nsfw,geotargeting,str(-1))    # default seconds  
     else:
         newAdSecondsMenu(message,url,adtitle,description,nsfw,geotargeting)
     
