@@ -61,7 +61,15 @@ cents1000 = 10/getDogePrice()
 cents500000 = 500/getDogePrice()
 
 # COUNTRIES allowed
-countries = ["us", "en", "it", "id", "sg", "ru", "ng", "de", "vn", "nl", "ph", "in", "ve", "gb", "br", "au", "fi", "fr", "jp", "no", "my", "tr", "co", "ch", "ca", "mx", "ar", "ua", "es", "md", "eg", "bd", "mn", "cu", "th", "it", "ir"]
+countries = ["en", "id", "us", "ru", "sg", "de", "ng", "vn", "ph", "in", "nl", "mn", "gb", "br", "ve", "tr", "jp", "fi", 
+"my", "eg", "bd", "mm", "fr", "md", "ps", "ua", "ar", "co", "th", "es", "mx", "pk", "it", "ca", "dz", "cu", "ma", "ir", 
+"gh", "uz", "hu", "lk", "au", "ec", "pe", "cm", "zm", "sd", "cn", "se", "bj", "ye", "et", "hk", "iq", "ci", "tg", "pl", 
+"np", "at", "tw", "za", "ae", "ch", "az", "do", "bg", "ro", "kz", "kr", "pt", "ie", "am", "gr", "bo", "ke", "sk", "mg", 
+"ni", "tn", "rs", "by", "cl", "sy", "cz", "af", "bf", "il", "is", "lu", "ao", "cr", "be", "si", "kh", "pa", "jo", "ge", 
+"cd", "jm", "hr", "mk", "sn", "kg", "lb", "sr", "tt", "ht", "xk", "ly", "dk", "lt", "mv", "kw", "uy", "al", "gt", "ug", 
+"py", "ga", "no", "ml", "zw", "hn", "ba", "bn", "tz", "mz", "cg", "so", "qa", "lv", "me", "nz", "sz", "la", "pr", "tj", 
+"cy", "pg", "gn", "bi", "ls", "ee", "ne", "mw", "bw", "mu", "mt", "mp", "to", "rw", "vc", "om", "nc", "ky", "sc", "gi", 
+"fj", "cv", "lr", "tc", "gd", "bh", "sl", "bb", "pf", "sm", "er", "xx"]
 
 # //////////////////////////////// COMMANDS ////////////////////////////////
 # Create the bot

@@ -11,41 +11,69 @@
 <link rel="icon" type="image/png" sizes="192x192" href="favicons/images-android-icon-192x192.png"><link rel="icon" type="image/png" sizes="32x32" href="favicons/images-favicon-32x32.png"><link rel="icon" type="image/png" sizes="96x96" href="favicons/images-favicon-96x96.png">
 <meta name="theme-color" content="#ffffff">
 </head>
-<body class="bg-light">
-    <div class="container">
-        <div class="mt-3 text-center"><a href="earndoge.html"><img src="images/images-logo.png" alt="EarnDogeToday"></a></div>
-        <div class="card card-login mx-auto mt-3">
-            <div class="card-body">
-                <div class="text-center">
+<div class="container">
+    <div class="mt-3 text-center"><a href="earndoge.html"><img src="images/images-logo.png"></a></div>
+    <div class="card card-login mx-auto mt-3">
+      <div class="card-body">
+        <div class="text-center">
+<?php
+	//error_reporting(E_ERROR | E_PARSE); 
+	error_reporting(E_ALL ^ E_WARNING);
+	define('DB_SERVER', 'localhost');
+	define('DB_USERNAME', 'telegrambot');
+	define('DB_PASSWORD', 'telegrambot');
+	define('DB_NAME', 'telegrambot');
 
-                    <h4>Welcome to Earn Doge Today!</h4>
+	//connection
+	$mysqli = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
+	if ($mysqli->connect_errno) {
+		printf("Connect failed: %s\n", $mysqli->connect_error);
+		exit();
+	}
+	$mysqli->set_charset("utf8");
+?>
 
-                    <ul class="list-group mt-4"><li class="list-group-item"><i class="fa fa-fw fa-mouse-pointer"></i> Earn cryptocurrency by clicking links</li>
-                        <li class="list-group-item"><i class="fa fa-fw fa-car"></i> Buy traffic with cryptocurrency</li>
-                    </ul><h5 class="mt-4">Start earning on Telegram:</h5>
-                    <ul class="list-group"><li class="list-group-item">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <a href="https://t.me/EarnDogeTodayBot/" title="Contact @EarnDogeTodayBot on Telegram" target="_blank">
-                                        <img src="images/bots-doge.png"></a>
-                                                                    </div>
-                                <div class="col-md-8 mt-2 text-center">
-                                    <div class="mb-2">Earn Dogecoin <small>(DOGE)</small></div>
-                                    <a href="https://t.me/EarnDogeTodayBot" title="Contact @EarnDogeTodayBot on Telegram" target="_blank" class="btn btn-md btn-light"><i class="fa fa-telegram"></i> EarnDogeToday Bot</a>
-                                                                    </div>
-                            </div>
-                                                                    </ul></div>
-            </div>
-        </div>
-        <div class="text-center mt-4">
+          <h4>Daily clicks by country</h4>
+
+          <table class="table"><thead><tr><th scope="col">Code</th><th scope="col">Country</th><th scope="col">Clicks</th></tr></thead>
+			  <tbody>
+<?php 
+		
+	//get country data
+	$code = "";
+	$country = "";
+	$clicks = "";
+	
+	$sql = "SELECT * FROM country ORDER BY clicks DESC";
+	$result = $mysqli->query($sql);
+	if ($result) {
+		if ($result->num_rows > 0) {
+			while ($row = $result->fetch_array()) {
+				$code = $row['code'];
+				$country = $row['country'];
+				$clicks = $row['clicks'];
+	echo "<tr>";
+		echo "<th scope='row'>".$code."</th>";
+			echo "<td>".$country."</td>";
+			echo "<td>".$clicks."</td>";
+	echo "</tr>";
+			}
+		}
+	}	
+
+?>
+			</tbody>
+		  </table>
+		</div>
+      </div>
+    </div>
+    <div class="text-center mt-4">
     <ul class="list-inline"><li class="list-inline-item"><a title="Home" class="small" href="earndoge.html">home</a></li>
-        <li class="list-inline-item"><a title="Daily traffic by country" class="small" href="countries.php">traffic</a></li>
+        <li class="list-inline-item"><a title="Daily traffic by country" class="small" href="countries.html">traffic</a></li>
         <li class="list-inline-item"><a title="Most recent withdrawals" class="small" href="payments.html">payments</a></li>
         <li class="list-inline-item"><a title="Privacy Policy" class="small" href="privacy.html">privacy</a></li>
         <li class="list-inline-item"><a title="Terms of Service" class="small" href="terms.html">terms</a></li>
         <li class="list-inline-item"><a title="Frequently asked questions" class="small" href="faq.html">faq</a></li>
         </ul><ul class="list-inline"><li class="list-inline-item"><a title="Twitter" href="https://twitter.com/EarnDogeToday/" target="_blank"><i class="fa fa-twitter"></i></a></li>
         <li class="list-inline-item"><a title="Facebook" href="https://www.facebook.com/EarnDogeToday/" target="_blank"><i class="fa fa-facebook-official"></i></a></li>
-         </ul></div>    </div>    
-    
-        
+         </ul></div>  </div> 

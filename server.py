@@ -53,15 +53,25 @@ def updateUser(address,balance):
         print("recieved balance = "+str(balance))
         
         mycursor = connector.cursor()
-        mycursor.execute("SELECT virtualBalance FROM user WHERE address = \'"+ address +"\'")  
+        mycursor.execute("SELECT virtualBalance FROM user WHERE address = \'"+ address +"\'") 
+        print("SELECT virtualBalance FROM user WHERE address = \'"+ address +"\'") 
         virtualBalance = mycursor.fetchall()
-        print("virtual Balance = "+str(virtualBalance[0][0]))
+        if(address == str(mainAccount)):
+            print("MAIN ACCOUNT BAL = "+str(virtualBalance[0][0]))
+        else:
+            print("virtual Balance = "+str(virtualBalance[0][0]))
+
         totalBalance = float(balance) + float(str(virtualBalance[0][0])) 
         print("Total Balance = "+str(totalBalance))
         mycursor = connector.cursor()
         mycursor.execute("UPDATE user SET virtualBalance = \'"+ str(totalBalance) +"\'  WHERE address = \'" + address + "\'")
         connector.commit()
-        block_io.withdraw_from_addresses(amounts="20", from_addresses="2N3YcfGc3ozvgUUkZgMQmpjzBVuofChhiLi", to_addresses=str(mainAccount))
+        print("fee = "+str(block_io.get_network_fee_estimate(amounts=str(balance), to_addresses=str(mainAccount))["data"]["estimated_network_fee"]))
+        fee = str(block_io.get_network_fee_estimate(amounts=str(balance), to_addresses=str(mainAccount))["data"]["estimated_network_fee"])
+        #amountMinusFee = float(balance)-float(fee) #sometimes when sending from user to main account you have to send amount - fee because it doesnt calculate it automatically?
+        amountMinusFee = float(balance)
+        #print("amountMinusFee = "+str(amountMinusFee))
+        block_io.withdraw_from_addresses(amounts=str(amountMinusFee), from_addresses= address , to_addresses=str(mainAccount))
    
     
 
