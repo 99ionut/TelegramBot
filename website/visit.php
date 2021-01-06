@@ -136,6 +136,7 @@ function getTimeSpentOnSite(){
 }
 
 function startCounting(){
+		var flag = 1;
 		timerStart = Date.now();
 		timer = setInterval(function(){
     		timeSpentOnSite = getTimeSpentOnSite()+(Date.now()-timerStart);
@@ -146,8 +147,14 @@ function startCounting(){
 			var timePassed = (timeToSpend - parseInt(timeSpentOnSite/1000));
 			console.log(timePassed);
 			if(timePassed <= 0){
-				document.getElementById("timer").innerHTML = "You earned "+ cpc +" DOGE!";
-			} else {
+				
+				if(flag == 1){  //only send 1 webhook and update text 1 time
+					flag = 0;
+					
+					document.getElementById("timer").innerHTML = "You earned "+ cpc +" DOGE!";			
+				}	
+				
+				} else {
 				document.getElementById("timer").innerHTML = "Please wait "+ timePassed +" seconds...";
 			}
 		},1000);

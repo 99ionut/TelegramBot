@@ -16,11 +16,18 @@ from datetime import date
 connector = dbConnector.connect()
 
 # BLOCK.IO
-version = 2
-block_io = BlockIo('3ca2-a0e8-2752-dfdc', 'telegrambot', version)
+mycursor = connector.cursor()
+mycursor.execute("SELECT blockIoApi,blockIoSecretPin,blockIoVersion,botToken FROM settings")
+botSettings = mycursor.fetchall()
+print(str("BOT SETTINGS = "+ str(botSettings)))
+blockIoApi = botSettings[0][0]
+blockIoSecretPin = botSettings[0][1]
+blockIoVersion = botSettings[0][2]
+block_io = BlockIo(str(blockIoApi), str(blockIoSecretPin), str(blockIoVersion))
 
 # BOT TOKEN
-token = '1315794495:AAHz5CVPLTqUE3OoTFaXe54ZmrMHHZjL1Rk'
+botToken = botSettings[0][3]
+token = str(botToken)
 
 def serverUpdate(request):
     print("ricevuto update")
