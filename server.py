@@ -1,6 +1,7 @@
 import mysql.connector
 from flask import Flask, request, abort
 from block_io import BlockIo
+import math
 
 #///////////////// DB CONNECT
 def connect():
@@ -45,8 +46,15 @@ def webhook():
                 print("positive") #positive transactions (deposit)
                 balance = float(request.json["data"]["balance_change"])
                 address = str(request.json["data"]["address"])
-                txid = str(request.json["data"]["txid"])                   
-                updateUser(address,balance,mycursor,txid)
+                txid = str(request.json["data"]["txid"])
+
+                mycursor.execute("SELECT transaction FROM transaction WHERE transaction = \'"+ txid +"\'")
+                existingTransaction = mycursor.fetchall()
+                print("existing transaction = " + str(existingTransaction))
+                if(str(existingTransaction) == "[]"): #this is to avoid doing the same thing twice, because the block_io sends the same webhook more than once
+                    updateUser(address,balance,mycursor,txid)
+                else:
+                    print("!ALREADY EXISTS")
             else:
                 #print("negative") #negative transactions (withdraw)
                 pass
@@ -62,37 +70,40 @@ def webhook():
 
 def updateUser(address,balance,mycursor,txid):
         print("address = "+address)
-        print("wtf")
         print("recieved balance = "+str(balance))
-
-        mycursor.execute("SELECT virtualBalance FROM user WHERE address = \'"+ address +"\'") 
-        print("SELECT virtualBalance FROM user WHERE address = \'"+ address +"\'") 
-        virtualBalance = mycursor.fetchall()
-        print("virtual Balance = "+str(virtualBalance[0][0]))
-        totalBalance = float(balance) + float(str(virtualBalance[0][0])) 
-        print("Total Balance = "+str(totalBalance))
-        mycursor = connector.cursor()
-        mycursor.execute("UPDATE user SET virtualBalance = \'"+ str(totalBalance) +"\'  WHERE address = \'" + str(address) + "\'")
-        connector.commit()
-
-        mycursor = connector.cursor()
-        mycursor.execute("SELECT username FROM user WHERE address = \'"+ str(address) +"\' ")
-        username = str(mycursor.fetchall()[0][0])
-        connector.commit()
-        mycursor = connector.cursor()
-        mycursor.execute("INSERT INTO transaction(transaction,amount,userAddress,userUsername) VALUES ( \'" + str(txid) + "\',\'" + str(balance) + "\',\'" + str(address) + "\',\'" + str(username) + "\')")
-        connector.commit()
-        print("DB Insert")
 
         print("fee = "+str(block_io.get_network_fee_estimate(amounts=str(balance), to_addresses=str(mainAccount))["data"]["estimated_network_fee"]))
         fee = str(block_io.get_network_fee_estimate(amounts=str(balance), to_addresses=str(mainAccount))["data"]["estimated_network_fee"])
-        amountMinusFee = float(balance)-float(fee) #sometimes when sending from user to main account you have to send amount - fee because it doesnt calculate it automatically?
+        amountMinusFee = '%.3f'%(float(balance)-float(fee)) #need to keep 3 decimals, too many decimals break the transaction
         print("amount minus fee = "+str(amountMinusFee))
         amountToSend = float(balance)
         print("total amount to send = "+str(amountToSend))
-        block_io.withdraw_from_addresses(amounts=str(amountMinusFee), from_addresses= address , to_addresses=str(mainAccount), priority='custom', custom_network_fee= str(fee))
-        print("SENT!")
+        if(float(amountMinusFee) < 2 ): #block io need at least 2 (without fee) doge to send the transaction
+            print("!AMOUNT TOO LOW")
+        else:
+            mycursor.execute("SELECT virtualBalance FROM user WHERE address = \'"+ address +"\'") 
+            print("SELECT virtualBalance FROM user WHERE address = \'"+ address +"\'") 
+            virtualBalance = mycursor.fetchall()
+            print("virtual Balance = "+str(virtualBalance[0][0]))
+            totalBalance = float(balance) + float(str(virtualBalance[0][0])) 
+            print("Total Balance = "+str(totalBalance))
+            mycursor = connector.cursor()
+            mycursor.execute("UPDATE user SET virtualBalance = \'"+ str(totalBalance) +"\'  WHERE address = \'" + str(address) + "\'")
+            connector.commit()
+
+            mycursor = connector.cursor()
+            mycursor.execute("SELECT username FROM user WHERE address = \'"+ str(address) +"\' ")
+            username = str(mycursor.fetchall()[0][0])
+            connector.commit()
+            mycursor = connector.cursor()
+            mycursor.execute("INSERT INTO transaction(transaction,amount,userAddress,userUsername) VALUES ( \'" + str(txid) + "\',\'" + str(balance) + "\',\'" + str(address) + "\',\'" + str(username) + "\')")
+            connector.commit()
+            print("DB Insert")
+            block_io.withdraw_from_addresses(amounts=str(amountMinusFee), from_addresses= address , to_addresses=str(mainAccount), priority='custom', custom_network_fee= str(fee))
+            print("SENT!")
     
 
 if __name__ == '__main__':
     app.run()
+    #from waitress import serve
+    #serve(app, host="0.0.0.0", port=8080)

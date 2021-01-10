@@ -32,18 +32,13 @@ body {
 
 </style>
 </head>
-<body onload="resetTime()">
+<body onload="">
     <div id="main">
 	
-	<?php
-	$ad = "";
-	if (isset($_GET['ad'])) {
-		$ad = $_GET['ad'];
-	}
-	echo "<h3>IN LINK</h3>";
-	echo $ad;
-	
-	//error_reporting(E_ERROR | E_PARSE); 
+<?php
+
+		
+	//DB CONNECTION
 	error_reporting(E_ALL ^ E_WARNING);
 	define('DB_SERVER', 'localhost');
 	define('DB_USERNAME', 'telegrambot');
@@ -58,72 +53,108 @@ body {
 	}
 	$mysqli->set_charset("utf8");
 
-	
+	$ad = "";
+	if (isset($_GET['ad'])) {
+		$ad = $_GET['ad'];
+	}
+	$sql = "SELECT * FROM link WHERE customLink = ".$ad;
+	echo $sql;
+	//IF THE LINK IS VALID
+	$result = $mysqli->query($sql);
+	if ($result == "") { 	
+		echo "<h3>INVALID URL </h3>";
+		$xframe = 0;
+		echo '<div class="container">';
+        echo '<div class="mt-3 text-center"><a href="https://www.i0nut.com/earndogetoday/earndoge.html"><img src="./images/images-logo.png"></a></div>';
+        echo '<div class="card card-login mx-auto mt-3">';
+        echo '    <div class="card-header">Error</div>';
+        echo '    <div class="card-body">';
+        echo '        <div class="text-center">';
+        echo '            <p>Sorry, but the link you used is not valid.</p>';
+        echo '           <p>Use the <strong>/visit</strong> command to get a new one.</p>';
+        echo '        </div>';
+        echo '        <div class="text-center">';
+        echo '            <a class="d-block small mt-4" href="https://www.i0nut.com/earndogetoday/earndoge.html">Return home</a>';
+        echo '        </div>';
+        echo '    </div>';
+        echo '  </div>';
+		echo '</div>';
+	//IF LINK NOT VALID
+	} else {
+		echo "resetTime()";
+		echo "<h3>VALID LINK</h3>";
+
 	//get Link data
-	echo "<h3>LINK DATA </h3>";
-	$trattamenti = array();
-	$customLink = "";
-	$username = "";
-	$campaignId = "";
-	
-	$sql = "select * from link";
+		echo "<h3>LINK DATA </h3>";
+		if ($result) {
+			if ($result->num_rows > 0) {
+				while ($row = $result->fetch_array()) {
+					echo "<br>";
+					echo $row['customLink'];
+					$customLink = $row['customLink'];
+					echo "<br>";
+					echo $row['username'];
+					$username = $row['username'];
+					echo "<br>";
+					echo $row['campaignId'];
+					$campaignId = $row['campaignId'];
+					echo "<br>";
+				}
+			}
+		}	
+
+    //get webhook
+    $webhook = "";
+	$sql = "select webhook from settings";
 	$result = $mysqli->query($sql);
 	if ($result) {
 		if ($result->num_rows > 0) {
 			while ($row = $result->fetch_array()) {
 				echo "<br>";
-				echo $row['customLink'];
-				$customLink = $row['customLink'];
-				echo "<br>";
-				echo $row['username'];
-				$username = $row['username'];
-				echo "<br>";
-				echo $row['campaignId'];
-				$campaignId = $row['campaignId'];
-				echo "<br>";
-				array_push($trattamenti, $row['username']);
+				echo $row['webhook'];
+				$webhook = $row['webhook'];
 			}
 		}
 	}	
-	print_r($trattamenti);
 	
 	//get adCampaign
-	echo "<h3>AD CAMPAIGN URL </h3>";
+	echo "<h3>AD CAMPAIGN DATA </h3>";
 	$sql = "select url,seconds,cpc from adcampaign where campaignId = ".$campaignId;
 	$result = $mysqli->query($sql);
 	if ($result) {
 		if ($result->num_rows > 0) {
 			while ($row = $result->fetch_array()) {
-				echo "<br>";
-				echo "<a href=".$row['url'].">".$row['url']."</a>";
-				$url = $row['url'];
-				echo "<br>";
-				$seconds = $row['seconds'];
-				echo $seconds;
-				echo "<br>";
-				$cpc = $row['cpc'];
-				echo $cpc;
-				echo "<br>";
-				if($seconds == "-1"){
+					echo "<br>";
+					echo "<a href=".$row['url'].">".$row['url']."</a>";
+					$url = $row['url'];
+					echo "<br>";
+					$seconds = $row['seconds'];
 					echo $seconds;
-					$xframe = -1;
-					echo "no xframe";
-				}else{
-					$xframe = 1;
-					echo "xframe allowed";
+					echo "<br>";
+					$cpc = $row['cpc'];
+					echo $cpc;
+					echo "<br>";
+					if($seconds == "-1"){
+						echo $seconds;
+						$xframe = -1;
+						echo "no xframe";
+						//window.location.replace("http://www.w3schools.com");
+					}else{
+						$xframe = 1;
+						echo "xframe allowed";
+					}
 				}
-				echo "<br>";
 			}
 		}
-	}	
-	?>
+	}
+?>
 	
-	<script type="application/javascript">
+	<script type="text/javascript">
 function resetTime(){
 	localStorage.setItem('timeSpentOnSite',0);
 }
 
-var timeToSpend = <?php echo $seconds ?>;
+var timeToSpend = <?php echo $seconds - 20 ?>;
 var cpc = <?php echo $cpc ?>;
 var timer;
 var timerStart;
@@ -143,19 +174,19 @@ function startCounting(){
     		localStorage.setItem('timeSpentOnSite',timeSpentOnSite);
     		timerStart = parseInt(Date.now());
     		// Convert to seconds
-    		console.log(parseInt(timeSpentOnSite/1000));
 			var timePassed = (timeToSpend - parseInt(timeSpentOnSite/1000));
 			console.log(timePassed);
 			if(timePassed <= 0){
 				
-				if(flag == 1){  //only send 1 webhook and update text 1 time
-					flag = 0;
-					
+				//if(flag == 1){  //only send 1 webhook and update text 1 time
+				//	flag = 0;
+					//postDataToWebhook();
 					document.getElementById("timer").innerHTML = "You earned "+ cpc +" DOGE!";			
-				}	
+					
 				
 				} else {
 				document.getElementById("timer").innerHTML = "Please wait "+ timePassed +" seconds...";
+				
 			}
 		},1000);
 }
@@ -191,9 +222,57 @@ if( stopCountingWhenWindowIsInactive ){
         }
     });
 }
+
+
+function postDataToWebhook(){
+  //get the values needed from the passed in json object
+  var userName="ciao";
+  var userPlatform="dio";
+  var userEmail="bbbr";
+  //url to your webhook
+  var webHookUrl="$webhook";
+  
+  //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
+  var oReq = new XMLHttpRequest();
+  var myJSONStr = payload={
+      "text": "Acuired new user",
+      "attachments":[
+        {
+          "author_name": userName,
+          "author_icon": "http://icons.iconarchive.com/icons/noctuline/wall-e/128/Wall-E-icon.png",
+          "color": "#7CD197",
+          "fields":[
+              {
+                "title":"Platform",
+                "value":userPlatform,
+                "short":true
+              },
+              {
+                "title":"email",
+                "value":userEmail,
+                "short":true
+              }
+          ]
+
+        }
+    ]
+
+  };
+  
+//register method called after data has been sent method is executed
+  oReq.addEventListener("load", reqListener);
+  oReq.open("POST", webHookUrl,true);
+  oReq.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  oReq.send(JSON.stringify(myJSONStr));
+}
+//callback method after webhook is executed
+function reqListener () {
+  console.log(this.responseText);
+}
+
 </script>
 	
-	<div id="headbar">
+	<div id="headbar" style="display:none">
 	<h5 style="margin-left:20px; margin-top:15px" id="timer">Loading...</h5>
 	</div>
 	<div>

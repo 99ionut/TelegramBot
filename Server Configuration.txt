@@ -1,0 +1,40 @@
+1) Create DigitalOcean droplet with Ubuntu 18.04 LTS x64
+
+2) to get the root password for the console, do this:
+https://www.digitalocean.com/community/questions/what-is-my-root-password
+
+3) to connect with FTP and transfer files follow this:
+https://www.digitalocean.com/community/questions/how-i-get-ftp-login-with-filezilla
+Host: sftp://Your_IP
+User: root (or your username)
+Password: Your password
+
+3) to use GUI from instead of the console, open the droplet console,
+install xfce4, by following the first steps for this:
+https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-vnc-on-ubuntu-16-04#step-3-%E2%80%94-testing-the-vnc-desktop
+then "startxfce4"
+
+4) to install python do this:
+https://docs.python-guide.org/starting/install3/linux/
+USE "PIP3" and "PYTHON3" in the commands from now on
+
+5)install phpmyadmin do this:
+https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-18-04
+install mysql-server, then go to "ip/phpmyadmin", in the .py, on website .php use ip?
+import the db.sql
+
+6)Allow outside connections to DB:
+https://www.digitalocean.com/community/questions/unable-to-connect-to-remote-mysql-server
+
+7)install ngrok:
+https://ngrok.com/download
+
+8)use production server:
+https://stackoverflow.com/questions/51025893/flask-at-first-run-do-not-use-the-development-server-in-a-production-environmen
+
+9) to install python imports ex: pip3 install block_io
+
+10) to start a program: python3 bot_main.py
+
+11) idk? mysql -u username -p
+GRANT ALL ON telegrambot.* TO root@'%' IDENTIFIED BY 'telegrambot';

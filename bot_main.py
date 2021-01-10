@@ -1,4 +1,5 @@
 #!/usr/bin/python 
+# -- coding: UTF-8 --
 import telebot
 from block_io import BlockIo
 import string
@@ -314,7 +315,7 @@ def visitSitesMenu(message):
             text='🛑 Report', callback_data="reportAd"), telebot.types.InlineKeyboardButton(
             text='⏭ Skip', callback_data="skipAd"))
         bot.send_message(
-        message.chat.id, text="custom link = http://localhost/earndogetoday/visit.php?ad="+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
+        message.chat.id, text="custom link = http://www.i0nut.com/earndogetoday/visit.php?ad="+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
 
     else: #if there is a last ad show that one
         print("last ad exists")
@@ -336,7 +337,7 @@ def visitSitesMenu(message):
             text='🛑 Report', callback_data="reportAd"), telebot.types.InlineKeyboardButton(
             text='⏭ Skip', callback_data="skipAd"))
         bot.send_message(
-        message.chat.id, text="custom link = http://localhost/earndogetoday/visit.php?ad="+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
+        message.chat.id, text="custom link = http://www.i0nut.com/earndogetoday/visit.php?ad="+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
 
 
 # return an ad
