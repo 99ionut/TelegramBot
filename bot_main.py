@@ -45,7 +45,7 @@ adminlist = ["IonutZuZu", "userTest"]
 # minimum withdraw amount (in doge)
 minwithdrawamount = 4
 # minimum deposit amount (in doge)
-mindepositamount = 1
+mindepositamount = 3
 
 # CPC
 # minimum CPC amount
@@ -280,7 +280,7 @@ def visitSitesMenu(message):
     mycursor = connector.cursor()
     mycursor.execute("SELECT lastAd FROM user WHERE username = \'"+userWants+"\'")
     lastAd = mycursor.fetchall()
-    print("LAST AD = "+str(lastAd[0][0]))
+    print("LAST AD = "+str(lastAd[0][0])) #todo if last ad gets deleted and user tries to see last ad, breaks
 
     if(str(lastAd[0][0]) == "-1"): #if there is no last ad give the user a new one
         mycursor = connector.cursor() #expire previous links
@@ -338,7 +338,8 @@ def visitSitesMenu(message):
             text='⏭ Skip', callback_data="skipAd"))
         bot.send_message(
         message.chat.id, text="custom link = http://www.i0nut.com/earndogetoday/visit.php?ad="+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
-
+#todo if not enough ads enabled crash?
+#todo delete from recent ad if disabled
 
 # return an ad
 def getRandomAd(message):
@@ -364,14 +365,14 @@ def getRandomAd(message):
             getRandomAd(message)
 
         mycursor = connector.cursor()
-        mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'fastest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
+        mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'fastest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\'and status=\'1\' ")
         ad = mycursor.fetchall()
 
         if(str(ad) == "[]"):
             getRandomAd(message)
 
         else:
-            print("SELECT * FROM adcampaign WHERE speed = \'fastest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
+            print("SELECT * FROM adcampaign WHERE speed = \'fastest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' and status=\'1\'")
             print("FASTEST")
             print("seconds = "+str(seconds))
 
@@ -404,14 +405,14 @@ def getRandomAd(message):
             getRandomAd(message)
 
         mycursor = connector.cursor()
-        mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'faster\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
+        mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'faster\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' and status=\'1\'")
         ad = mycursor.fetchall()
 
         if(str(ad) == "[]"):
             getRandomAd(message)
 
         else:
-            print("SELECT * FROM adcampaign WHERE speed = \'faster\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
+            print("SELECT * FROM adcampaign WHERE speed = \'faster\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' and status=\'1\'")
             print("FASTER")
             print("seconds = "+str(seconds))
 
@@ -443,14 +444,14 @@ def getRandomAd(message):
             getRandomAd(message)
 
         mycursor = connector.cursor()
-        mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'slowest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
+        mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'slowest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' and status=\'1\' ")
         ad = mycursor.fetchall()
 
         if(str(ad) == "[]"):
             getRandomAd(message)
 
         else:
-            print("SELECT * FROM adcampaign WHERE speed = \'slowest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' ")
+            print("SELECT * FROM adcampaign WHERE speed = \'slowest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' and status=\'1\'")
             print("SLOW")
             print("seconds = "+str(seconds))
 
@@ -527,6 +528,7 @@ def adsMenu(message):
         ads = getUserAds(message.chat.username)
         nrAds = checkUserAds(message.chat.username)
         adsString = ""
+        print("USER ADS SENT")
         print("ads="+str(ads))
         for i in range(int(nrAds)):
                 adsString = "*Campaign#"+ str(i+1) +"* \n\nTitle: *"+str(ads[i][1])+"*\nDescription: "+str(ads[i][2])+\
@@ -543,9 +545,9 @@ def adsMenu(message):
                 adsString = adsString + "\nCPC: *"+str(ads[i][5])+" DOGE*\nDaily Budget: *"+str(ads[i][6])+" DOGE*"+\
                 "\nClicks: *"+str(ads[i][11])+"* total/ *"+str(ads[i][4])+"* today"
 
-                if(enabled == 1):
+                if(enabled == 0):
                     bot.send_message(message.chat.id, adsString,parse_mode='Markdown',reply_markup=markupDisabled)
-                elif(enabled == 0):
+                elif(enabled == 1):
                     bot.send_message(message.chat.id, adsString,parse_mode='Markdown',reply_markup=markupEnabled)
                
                 adsString = ""
@@ -588,7 +590,6 @@ def addUrl(message):
                 newAdUrlMenu(message)
         except:
             newAdUrlMenu(message)
-# todo if url has weird characters it breakes because of markdown
 
 def newAdTitleMenu(message, url):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -690,7 +691,7 @@ def addAcceptGeotargeting(message,url,adtitle,description,nsfw):
     else:
         newAdSecondsMenu(message,url,adtitle,description,nsfw,usercountries)
     
-def newAdSecondsMenu(message,url,adtitle,description,nsfw,geotargeting): #todo sites like btc.org break
+def newAdSecondsMenu(message,url,adtitle,description,nsfw,geotargeting): 
     try:
         r = requests.get(url)
         #print("HEADERS = "+str(r.headers))
@@ -754,6 +755,7 @@ def addCpc(message,url,adtitle,description,nsfw,geotargeting,seconds):
                 speed = "faster"
                 newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,seconds,message.text,speed)
             elif(float(str(message.text)[0:6]) >= float(str(fastest)[0:6]) and float(str(message.text)[0:6]) <= float(str(maxamount)[0:6])):
+                print(str(message.text))
                 speed = "fastest"
                 newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,seconds,message.text,speed)        
             else:
@@ -868,14 +870,21 @@ def withdrawMenu2(message):
 
 def withdrawAddress(message):
     print(message.text)
-    validate = block_io.is_valid_address(address=message.text) #must address be on the same network (Doge testnet or Doge official ecc..)
-    print(validate["data"]["is_valid"]) 
-    if(str(validate["data"]["is_valid"]) == "True"): #todo inputs break on special characters like ()'ecc.. add try catch everywhere?
-        print("ok withdraw")
-        withdrawAddressConfirm(message)
-    else:     
-        print("invalid withdraw")
-        withdrawMenu2(message)
+    if(message.text == '❌ Cancel'):
+        cancelWithdrawMenu(message)
+    else:
+        try:
+            validate = block_io.is_valid_address(address=message.text) #must address be on the same network (Doge testnet or Doge official ecc..)
+            print(validate["data"]["is_valid"]) 
+            if(str(validate["data"]["is_valid"]) == "True"): 
+                print("ok withdraw")
+                withdrawAddressConfirm(message)
+            else:     
+                print("invalid withdraw")
+                withdrawMenu2(message)
+        except Exception as e:
+            print("ERROR withdrawAddress = "+str(e))
+            withdrawMenu2(message)
 
 def withdrawAddressConfirm(message):
     address = message
@@ -887,20 +896,29 @@ def withdrawAddressConfirm(message):
     bot.register_next_step_handler(message=message, address=address, callback=withdrawAddressAmount)
 
 def withdrawAddressAmount(message,address):
-    amount = message
-    print("amount to withdraw = "+str(amount.text))
-    print("address to withdraw = "+str(address.text))
-    userBalance = getUserBalance(amount.chat.username)
-    print("user balance = "+str(userBalance))
-    if( float(amount.text) >= float(minwithdrawamount) and float(amount.text) <= float(userBalance) ):
-        keyboard = telebot.types.ReplyKeyboardMarkup(True)
-        keyboard.row('✅ Confirm','❌ Cancel')
-        bot.send_message(message.chat.id, "Are you sure you want to send *"+ str(amount.text) + " DOGE* to *"+ str(address.text) +"* ? \n\nYou will be charged a blockchain fee of 0.056 DOGE.",
+    if(message.text == '❌ Cancel'):
+        cancelWithdrawMenu(message)
+    else:
+        try: 
+            amount = message
+            print("amount to withdraw = "+str(amount.text))
+            print("address to withdraw = "+str(address.text))
+            userBalance = getUserBalance(amount.chat.username)
+            print("user balance = "+str(userBalance))
+            if( float(amount.text) >= float(minwithdrawamount) and float(amount.text) <= float(userBalance) ):
+                fee = block_io.get_network_fee_estimate(amounts=str(amount.text), to_addresses=str(address.text))["data"]["estimated_network_fee"]
+                fee = round(float(fee),3)
+                keyboard = telebot.types.ReplyKeyboardMarkup(True)
+                keyboard.row('✅ Confirm','❌ Cancel')
+                bot.send_message(message.chat.id, "Are you sure you want to send *"+ str(amount.text) + " DOGE* to *"+ str(address.text) +"* ? \n\nYou will be charged a blockchain fee of " + str(fee) + " DOGE.",
                      parse_mode='Markdown',
                      reply_markup=keyboard)
-        bot.register_next_step_handler(message=message, amount = amount, address = address, callback=withdrawAddressSend)
-    else:
-        withdrawAddressConfirm(address)
+                bot.register_next_step_handler(message=message, amount = amount, address = address, callback=withdrawAddressSend)
+            else:
+                withdrawAddressConfirm(address)
+        except Exception as e:
+            print("ERROR withdrawAddressAmount = "+str(e))
+            withdrawAddressConfirm(address)
 
 def withdrawAddressSend(message,amount,address):
     if(str(message.text)=='❌ Cancel'):
@@ -910,13 +928,12 @@ def withdrawAddressSend(message,amount,address):
         keyboard.row('➕ Deposit', '💵 Withdraw')
         keyboard.add('💰 Balance', '🕑 History')
         keyboard.add('🏠 Menu')
-        title = bot.send_message(message.chat.id, "✅ Your withdrawal has been requested!\n\nUse the /history command to view your transaction.", parse_mode='Markdown',reply_markup=keyboard)  
-    
+        title = bot.send_message(message.chat.id, "✅ Your withdrawal has been requested!\n\nUse the /history command to view your transaction.", parse_mode='Markdown',reply_markup=keyboard)   
     else:
-        cancelWithdrawMenu(message) 
+        withdrawAddressAmount(message,address) 
 
-#todo max amount of ads a day
-#todo max amount of high paying ads
+#todo max amount of ads a day?
+#todo max amount of high paying ads?
 
 def withdrawMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -1023,10 +1040,13 @@ def query_handler(call):
             print("USER AD = "+str(userAd))
 
             mycursor = connector.cursor()
-            mycursor.execute("UPDATE adcampaign SET status = 1 WHERE campaignId = \'" + str(userAd)+'\'')
+            mycursor.execute("UPDATE adcampaign SET status = 0 WHERE campaignId = \'" + str(userAd)+'\'')
+            connector.commit()
+            mycursor = connector.cursor()
+            mycursor.execute("UPDATE user SET lastAd = -1 WHERE lastAd = \'" + str(userAd)+'\'')
             connector.commit()
 
-            newMessage = str(call.message.text).replace('Disabled 🚫','Enabled ✅')
+            newMessage = str(call.message.text).replace('Enabled ✅','Disabled 🚫')
             newMessage = newMessage.replace('Campaign#','*Campaign#')
             newMessage = newMessage.replace('Title:','*Title:*')
             newMessage = newMessage.replace('Description:','*Description:')
@@ -1053,10 +1073,10 @@ def query_handler(call):
             print("USER AD = "+str(userAd))
         
             mycursor = connector.cursor()
-            mycursor.execute("UPDATE adcampaign SET status = 0 WHERE campaignId = \'" + str(userAd)+'\'')
+            mycursor.execute("UPDATE adcampaign SET status = 1 WHERE campaignId = \'" + str(userAd)+'\'')
             connector.commit()
 
-            newMessage = str(call.message.text).replace('Enabled ✅','Disabled 🚫')
+            newMessage = str(call.message.text).replace('Disabled 🚫','Enabled ✅')
             newMessage = newMessage.replace('Campaign#','*Campaign#')
             newMessage = newMessage.replace('Title:','*Title:*')
             newMessage = newMessage.replace('Description:','*Description:')
@@ -1170,9 +1190,8 @@ def query_handler(call):
                 text='✅ Yes', callback_data="deleteYes"), telebot.types.InlineKeyboardButton(
                 text='❌ Cancel', callback_data="deleteNo"))
                 bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=editKeyboard)           
-                #todo deleteNo
-        elif call.data == 'deleteYes':
-            
+
+        elif call.data == 'deleteYes':            
             print("AD user NR = "+str(str(call.message.text).split("#")[1].split(" ")[0]))
             print("username = "+str(call.message.chat.username))
             userAd = getUserAds(call.message.chat.username)[int(str(call.message.text).split("#")[1].split(" ")[0])-1][0]
@@ -1181,13 +1200,35 @@ def query_handler(call):
 
             newMessage = "*Your Ad has been deleted.*"
             bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=newMessage, parse_mode='Markdown')               
-                        
+
+        elif call.data == 'deleteNo':
+            editKeyboard = telebot.types.InlineKeyboardMarkup()
+            editKeyboard.add(telebot.types.InlineKeyboardButton(
+            text='Edit Title', callback_data="editAdTitle"), telebot.types.InlineKeyboardButton(
+            text='Edit Description', callback_data="editAdDescription"))
+            editKeyboard.add(telebot.types.InlineKeyboardButton(
+            text='Edit URL', callback_data="editAdUrl"), telebot.types.InlineKeyboardButton(
+            text='Geotargeting', callback_data="editAdGeotargeting"))
+            editKeyboard.add(telebot.types.InlineKeyboardButton(
+            text='Edit CPC', callback_data="editAdCpc"), telebot.types.InlineKeyboardButton(
+            text='Edit Budget', callback_data="editAdBudget"))
+            editKeyboard.add(telebot.types.InlineKeyboardButton(
+            text='⬅️ Back', callback_data="goAdBack"), telebot.types.InlineKeyboardButton(
+            text='🗑️ Delete', callback_data="deleteAd"))
+
+            print("AD user NR = "+str(str(call.message.text).split("#")[1].split(" ")[0]))
+            print("Message ID = "+str(call.message.message_id))
+            bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=editKeyboard)
+                         
+#todo if too many disabled ads it breaks, add try catch or else
 
 def editAdDelete(message, userAd):
     print("deleted campaign id = "+str(userAd))
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     mycursor = connector.cursor()
     mycursor.execute("DELETE FROM adcampaign WHERE campaignId = \'" + str(userAd)+"\'")
+    connector.commit()
+    mycursor.execute('UPDATE user SET lastAd = \'-1\'  WHERE lastAd = \'' + str(userAd) + '\'')
     connector.commit()   
 
 def editAdDescriptionMenu(message, userAd):
