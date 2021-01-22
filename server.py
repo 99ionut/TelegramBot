@@ -7,8 +7,8 @@ import math
 def connect():
     return mysql.connector.connect(
         host = 'localhost',
-        user = 'telegrambot',
-        password = 'telegrambot',
+        user = 'root',
+        password = '',
         database = 'telegrambot')
 
 connector = connect()
@@ -37,12 +37,86 @@ mycursor = connector.cursor()
 #block_io.enable_notification(notification_id='3614d812342f08eba83cfac8')
 #block_io.list_notifications(page='1')
 
-@app.route('/webhook', methods=['POST'])
+@app.route('/website', methods=['POST'])  #WEBSITE WEBHOOK
+def website():
+    if request.method == 'POST':
+        
+        try:
+            #get webhook data
+            print("WEBSITE WEBHOOK")    
+            dati = request.get_json(force=True)
+            print(dati)     
+            websiteXframe = dati["xframe"]
+            print("websiteXframe = "+websiteXframe)
+            websiteCustomLink = dati["customLink"]
+            print("websiteCustomLink = "+websiteCustomLink)
+            websiteUsername = dati["username"]
+            print("websiteUsername = "+websiteUsername)
+            websiteCampaignId = dati["campaignId"]
+            print("websiteCampaignId = "+websiteCampaignId)
+
+            #webhook query
+            mycursor = connector.cursor()
+
+            #get ownerTake
+            mycursor.execute("SELECT ownerTake FROM settings")
+            ownerTake = mycursor.fetchall()[0][0]
+            print("OWNER TAKE = "+str(ownerTake))
+
+            #delete temporary link
+            #mycursor.execute("DELETE FROM link WHERE customLink = \'"+ websiteCustomLink +"\'")
+            print("DELETED LINK")
+            #connector.commit()
+
+            #get the campaign cpc,dailyBudget,dailyBudgetSpent,username 
+            mycursor.execute("SELECT cpc,dailyBudget,dailyBudgetSpent,username FROM adcampaign WHERE campaignId = \'"+ websiteCampaignId +"\'")
+            websiteAd = mycursor.fetchall()
+            print("WEBSITE AD = "+str(websiteAd))
+
+            #remove from virtual balance of the user that posted the ad
+            mycursor.execute("UPDATE user SET virtualBalance = virtualBalance - \'"+ str(websiteAd[0][0]) +"\' WHERE username = \'"+ str(websiteAd[0][3]) +"\'")
+            connector.commit()
+            print("REMOVED VB")
+            
+            #set last ad -1 to the user that has seen the ad
+            #mycursor.execute("UPDATE user SET lastAd = -1 WHERE username = \'"+ websiteUsername +"\'")
+            #connector.commit()
+            print("REMOVED LAST AD")
+
+            #give the user that has seen the ad money
+            userCpc = websiteAd[0][0]-((websiteAd[0][0]*ownerTake)/100)
+            mycursor.execute("UPDATE user SET virtualBalance = virtualBalance + \'"+ str(userCpc) +"\' WHERE username = \'"+ websiteUsername +"\'")
+            connector.commit()
+            print("GIVE CPC = "+str(userCpc))
+
+            #increase clicks
+            mycursor.execute("UPDATE adcampaign SET clicks = clicks + 1 WHERE campaignId =  \'"+ websiteCampaignId +"\'")
+            connector.commit()
+            print("CLICKED")
+
+            #increase dailyBudgetSpent
+            mycursor.execute("UPDATE adcampaign SET dailyBudgetSpent = dailyBudgetSpent + \'"+ str(websiteAd[0][0]) +"\' WHERE campaignId = \'"+ websiteCampaignId +"\'")
+            connector.commit()
+            print("INCREASE DAILY BUDGET")
+            print("DONE")
+
+        except Exception as e:
+            print(e)
+        return 'success', 200       
+    else:
+        abort(400)
+
+
+
+
+@app.route('/webhook', methods=['POST'])  #BLOCKIO WEBHOOK
 def webhook():
     if request.method == 'POST':
-        #print(request.json)
-        try:           
+        #print(request.json)   
+        #print(dati["xframe"])      
+        try:     
             if(float(request.json["data"]["balance_change"]) > 0 and request.json["data"]["address"] != mainAccount): #also todo check main account?
+                print("BLOCKIO WEBHOOK")
                 print("positive") #positive transactions (deposit)
                 balance = float(request.json["data"]["balance_change"])
                 address = str(request.json["data"]["address"])
