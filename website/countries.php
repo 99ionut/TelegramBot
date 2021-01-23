@@ -20,8 +20,8 @@
 	//error_reporting(E_ERROR | E_PARSE); 
 	error_reporting(E_ALL ^ E_WARNING);
 	define('DB_SERVER', 'localhost');
-	define('DB_USERNAME', 'telegrambot');
-	define('DB_PASSWORD', 'telegrambot');
+	define('DB_USERNAME', 'root');
+	define('DB_PASSWORD', '');
 	define('DB_NAME', 'telegrambot');
 
 	//connection

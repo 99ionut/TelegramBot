@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><meta name="description" content="Earn cryptocurrency on Telegram by visiting websites and performing other simple tasks."><meta name="author" content="earndogetoday.com">
 <title>EARN DOGE today</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/css/materialize.min.css" rel="stylesheet">
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
 <link rel="apple-touch-icon-precomposed" sizes="57x57" href="favicons/images-apple-icon-57x57.png"><link rel="apple-touch-icon-precomposed" sizes="60x60" href="favicons/images-apple-icon-60x60.png"><link rel="apple-touch-icon-precomposed" sizes="72x72" href="favicons/images-apple-icon-72x72.png">
@@ -32,17 +33,19 @@ body {
 
 </style>
 </head>
-<body onload="">
+<body>
     <div id="main">
-	
+	<br>
+	<br>
+	<br>
 <?php
 
 		
 	//DB CONNECTION
 	error_reporting(E_ALL ^ E_WARNING);
 	define('DB_SERVER', 'localhost');
-	define('DB_USERNAME', 'telegrambot');
-	define('DB_PASSWORD', 'telegrambot');
+	define('DB_USERNAME', 'root');
+	define('DB_PASSWORD', '');
 	define('DB_NAME', 'telegrambot');
 
 	//connection
@@ -57,105 +60,115 @@ body {
 	if (isset($_GET['ad'])) {
 		$ad = $_GET['ad'];
 	}
+	
+	
+	$valid = 0;
+	
 	$sql = "SELECT * FROM link WHERE customLink = ".$ad;
-	echo $sql;
-	//IF THE LINK IS VALID
+	//IF THE LINK IS NOT VALID
 	$result = $mysqli->query($sql);
 	if ($result == "") { 	
-		echo "<h3>INVALID URL </h3>";
-		$xframe = 0;
-		echo '<div class="container">';
-        echo '<div class="mt-3 text-center"><a href="https://www.i0nut.com/earndogetoday/earndoge.html"><img src="./images/images-logo.png"></a></div>';
-        echo '<div class="card card-login mx-auto mt-3">';
-        echo '    <div class="card-header">Error</div>';
-        echo '    <div class="card-body">';
-        echo '        <div class="text-center">';
-        echo '            <p>Sorry, but the link you used is not valid.</p>';
-        echo '           <p>Use the <strong>/visit</strong> command to get a new one.</p>';
-        echo '        </div>';
-        echo '        <div class="text-center">';
-        echo '            <a class="d-block small mt-4" href="https://www.i0nut.com/earndogetoday/earndoge.html">Return home</a>';
-        echo '        </div>';
-        echo '    </div>';
-        echo '  </div>';
-		echo '</div>';
-	//IF LINK NOT VALID
+		$valid = 0;
+	//IF LINK IS VALID
 	} else {
-		echo "resetTime()";
-		echo "<h3>VALID LINK</h3>";
-
 	//get Link data
-		echo "<h3>LINK DATA </h3>";
 		if ($result) {
 			if ($result->num_rows > 0) {
 				while ($row = $result->fetch_array()) {
-					echo "<br>";
-					echo $row['customLink'];
 					$customLink = $row['customLink'];
-					echo "<br>";
-					echo $row['username'];
 					$username = $row['username'];
-					echo "<br>";
-					echo $row['campaignId'];
 					$campaignId = $row['campaignId'];
-					echo "<br>";
+					//echo $campaignId;
+					$valid = 1;
 				}
 			}
 		}	
 
     //get webhook
     $webhook = "";
-	$sql = "select webhook from settings";
+	$sql = "select webhookWebsite,ownerTake from settings";
 	$result = $mysqli->query($sql);
 	if ($result) {
 		if ($result->num_rows > 0) {
 			while ($row = $result->fetch_array()) {
-				echo "<br>";
-				echo $row['webhook'];
-				$webhook = $row['webhook'];
+				$webhook = $row['webhookWebsite'];
+				$ownerTake = $row['ownerTake'];
 			}
 		}
 	}	
 	
 	//get adCampaign
-	echo "<h3>AD CAMPAIGN DATA </h3>";
-	$sql = "select url,seconds,cpc from adcampaign where campaignId = ".$campaignId;
-	$result = $mysqli->query($sql);
-	if ($result) {
-		if ($result->num_rows > 0) {
-			while ($row = $result->fetch_array()) {
-					echo "<br>";
-					echo "<a href=".$row['url'].">".$row['url']."</a>";
+	if($valid != 0){
+		$sql = "select url,seconds,cpc from adcampaign where campaignId = ".$campaignId;
+		$result = $mysqli->query($sql);
+		if ($result) {
+			if ($result->num_rows > 0) {
+				while ($row = $result->fetch_array()) {
 					$url = $row['url'];
-					echo "<br>";
 					$seconds = $row['seconds'];
-					echo $seconds;
-					echo "<br>";
 					$cpc = $row['cpc'];
-					echo $cpc;
-					echo "<br>";
+					$userCpc = $cpc-(($cpc*$ownerTake)/100);
 					if($seconds == "-1"){
-						echo $seconds;
-						$xframe = -1;
-						echo "no xframe";
-						//window.location.replace("http://www.w3schools.com");
+						$xframe = 0; // if seconds = -1 means that the user doesn't want to force users to see the ad
 					}else{
-						$xframe = 1;
-						echo "xframe allowed";
+						$xframe = 1; // else is seconds higher than -1
 					}
 				}
 			}
 		}
+	} else {
+		$xframe = -1; //if url not valid
 	}
-?>
 	
-	<script type="text/javascript">
-function resetTime(){
+	
+}
+?>
+<a id="send" style="display:none" class="btn btn-large btn-full-width waves-effect waves-light">Send</a>
+
+<script src="https://code.jquery.com/jquery-2.1.1.min.js" type="text/javascript"></script> 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/js/materialize.min.js"></script>
+ 
+    <script>
+    $(function() {
+        $('#send').click(function(e) {
+        var url = "<?php echo $webhook; ?>";
+        var customLink = "<?php echo $customLink; ?>";
+        var username = "<?php echo $username; ?>";
+		var campaignId = "<?php echo $campaignId; ?>";
+		var xframe = "<?php echo $xframe; ?>";
+        //$.post(url,{"customLink": customLink,"username": username,"campaignId": campaignId,"xframe": xframe});
+        
+		var row_data = JSON.stringify({"customLink": customLink,"username": username,"campaignId": campaignId,"xframe": xframe});
+        //console.log(row_data);
+        $.post("http://911514092064.ngrok.io/website", row_data);
+	
+		});
+    });
+    </script>
+	
+	
+<script type="text/javascript">
+function resetTime(){	
+	console.log("XFRAME = "+xframe);
 	localStorage.setItem('timeSpentOnSite',0);
+	startCounting();
 }
 
-var timeToSpend = <?php echo $seconds - 20 ?>;
-var cpc = <?php echo $cpc ?>;
+
+/*function resetTime10(){
+	var xframe = "<?php echo $xframe; ?>";
+	console.log("XFRAME = "+xframe);
+	localStorage.setItem('timeSpentOnSite',0);
+	var timeToSpend = 10;
+	startCounting();
+}*/
+
+var flag = 1;
+
+var timeToSpend = <?php echo $seconds+1; ?>;
+
+var ownerTake = <?php echo $ownerTake ?>;
+var cpc = <?php echo $userCpc ?>;
 var timer;
 var timerStart;
 var timeSpentOnSite = getTimeSpentOnSite();
@@ -167,7 +180,6 @@ function getTimeSpentOnSite(){
 }
 
 function startCounting(){
-		var flag = 1;
 		timerStart = Date.now();
 		timer = setInterval(function(){
     		timeSpentOnSite = getTimeSpentOnSite()+(Date.now()-timerStart);
@@ -178,19 +190,23 @@ function startCounting(){
 			console.log(timePassed);
 			if(timePassed <= 0){
 				
-				//if(flag == 1){  //only send 1 webhook and update text 1 time
-				//	flag = 0;
-					//postDataToWebhook();
-					document.getElementById("timer").innerHTML = "You earned "+ cpc +" DOGE!";			
-					
+				if(flag == 1){  //only send 1 webhook and update text 1 time
+				flag = 0;
+					document.getElementById("timer").innerHTML = "You earned "+ cpc +" DOGE!";	
+					console.log("SENT");
+					$('#send').click();
+					//postDataToWebhook();	
+					if(xframe == 0){
+						
+						window.location.replace("<?php echo $url ?>");
+					}
+				}	
 				
 				} else {
-				document.getElementById("timer").innerHTML = "Please wait "+ timePassed +" seconds...";
-				
+				document.getElementById("timer").innerHTML = "Please wait "+ timePassed +" seconds...";				
 			}
 		},1000);
 }
-startCounting();
 
 /* ---------- Stop the timer when the window/tab is inactive ---------- */
 
@@ -223,62 +239,41 @@ if( stopCountingWhenWindowIsInactive ){
     });
 }
 
-
-function postDataToWebhook(){
-  //get the values needed from the passed in json object
-  var userName="ciao";
-  var userPlatform="dio";
-  var userEmail="bbbr";
-  //url to your webhook
-  var webHookUrl="$webhook";
-  
-  //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
-  var oReq = new XMLHttpRequest();
-  var myJSONStr = payload={
-      "text": "Acuired new user",
-      "attachments":[
-        {
-          "author_name": userName,
-          "author_icon": "http://icons.iconarchive.com/icons/noctuline/wall-e/128/Wall-E-icon.png",
-          "color": "#7CD197",
-          "fields":[
-              {
-                "title":"Platform",
-                "value":userPlatform,
-                "short":true
-              },
-              {
-                "title":"email",
-                "value":userEmail,
-                "short":true
-              }
-          ]
-
-        }
-    ]
-
-  };
-  
-//register method called after data has been sent method is executed
-  oReq.addEventListener("load", reqListener);
-  oReq.open("POST", webHookUrl,true);
-  oReq.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-  oReq.send(JSON.stringify(myJSONStr));
-}
-//callback method after webhook is executed
-function reqListener () {
-  console.log(this.responseText);
-}
-
 </script>
 	
-	<div id="headbar" style="display:none">
+	<div>
+	<?php if($xframe == 1){ ?> <!-- IF AD IS VALID -->
+	<div id="headbar">
 	<h5 style="margin-left:20px; margin-top:15px" id="timer">Loading...</h5>
 	</div>
-	<div>
-	<?php if($xframe == 1){ ?>
-	<iframe id="iFrame1" src=" <?php echo $url ?> " frameborder="0" style="overflow: hidden; height: 100%;
+	<script>xframe = 1;</script>
+	<script>resetTime();</script>
+	<iframe id="iFrame1" src=" <?php echo ""."$url".""; ?> " frameborder="0" style="overflow: hidden; height: 100%;
         width: 100%; position: absolute;"> </iframe>
+		
+	<?php } else if($xframe == 0) { ?> <!-- IF AD sec -1 -->
+	<div style="display:none" id="headbar">
+	<h5 style="margin-left:20px; margin-top:15px" id="timer">Loading...</h5>
+	</div>
+	<script>xframe = 0;</script>
+	<script>resetTime();</script>
+		
+	<?php } else { ?>  <!-- IF AD NOT VALID -->
+		<div class="container">
+        <div class="mt-3 text-center"><a href="https://www.i0nut.com/earndogetoday/earndoge.html"><img src="./images/images-logo.png"></a></div>
+        <div class="card card-login mx-auto mt-3">
+            <div class="card-header">Error</div>
+            <div class="card-body">
+                <div class="text-center">
+                    <p>Sorry, but the link you used is not valid.</p>
+                   <p>Use the <strong>/visit</strong> command to get a new one.</p>
+                </div>
+                <div class="text-center">
+                    <a class="d-block small mt-4" href="https://www.i0nut.com/earndogetoday/earndoge.html">Return home</a>
+                </div>
+            </div>
+          </div>
+		</div>
 	<?php } ?>
 	</div>
 </div>
