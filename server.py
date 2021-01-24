@@ -2,6 +2,8 @@ import mysql.connector
 from flask import Flask, request, abort
 from block_io import BlockIo
 import math
+import telebot
+import time
 
 #///////////////// DB CONNECT
 def connect():
@@ -15,7 +17,7 @@ connector = connect()
 
 #//////////////// SETTINGS
 mycursor = connector.cursor()
-mycursor.execute("SELECT blockIoApi,blockIoSecretPin,blockIoVersion,mainAccount FROM settings")
+mycursor.execute("SELECT blockIoApi,blockIoSecretPin,blockIoVersion,mainAccount,botToken FROM settings")
 botSettings = mycursor.fetchall()
 print("BOT SETTINGS = "+str(botSettings))
 blockIoApi = botSettings[0][0]
@@ -24,6 +26,11 @@ blockIoVersion = botSettings[0][2]
 block_io = BlockIo(str(blockIoApi), str(blockIoSecretPin), str(blockIoVersion))
 
 mainAccount = botSettings[0][3] #main account with all the founds
+
+# BOT TOKEN
+botToken = botSettings[0][4]
+token = str(botToken)
+bot = telebot.TeleBot(token)
 
 app = Flask(__name__)
 mycursor = connector.cursor()
@@ -59,9 +66,12 @@ def website():
             mycursor = connector.cursor()
 
             #get ownerTake
-            mycursor.execute("SELECT ownerTake FROM settings")
-            ownerTake = mycursor.fetchall()[0][0]
-            print("OWNER TAKE = "+str(ownerTake))
+            mycursor.execute("SELECT ownerTake,referralTake FROM settings")
+            getResults = mycursor.fetchall()
+            ownerTake = getResults[0][0]
+            referralTake = getResults[0][1]
+            print("OWNER TAKE % = "+str(ownerTake))
+            print("REFERRAL TAKE % = "+str(referralTake))
 
             #delete temporary link
             #mycursor.execute("DELETE FROM link WHERE customLink = \'"+ websiteCustomLink +"\'")
@@ -73,24 +83,62 @@ def website():
             websiteAd = mycursor.fetchall()
             print("WEBSITE AD = "+str(websiteAd))
 
+            #if virtual balance <= 0 set ad status to 0 (disabled)
+            mycursor.execute("SELECT virtualBalance FROM user WHERE username = \'"+ str(websiteAd[0][3]) +"\'")
+            userVirtualBalance = mycursor.fetchall()[0][0]
+            print("USER VB = "+str(userVirtualBalance))
+            if(userVirtualBalance <= 0):
+                print("DISABLED AD")
+                mycursor.execute("UPDATE adcampaign SET status = 0 WHERE campaignId = \'"+ str(websiteCampaignId) +"\'")
+                connector.commit()
+
             #remove from virtual balance of the user that posted the ad
             mycursor.execute("UPDATE user SET virtualBalance = virtualBalance - \'"+ str(websiteAd[0][0]) +"\' WHERE username = \'"+ str(websiteAd[0][3]) +"\'")
             connector.commit()
             print("REMOVED VB")
-            
+
             #set last ad -1 to the user that has seen the ad
-            #mycursor.execute("UPDATE user SET lastAd = -1 WHERE username = \'"+ websiteUsername +"\'")
-            #connector.commit()
+            mycursor.execute("UPDATE user SET lastAd = -1 WHERE username = \'"+ websiteUsername +"\'")
+            connector.commit()
             print("REMOVED LAST AD")
 
             #give the user that has seen the ad money
             userCpc = websiteAd[0][0]-((websiteAd[0][0]*ownerTake)/100)
-            mycursor.execute("UPDATE user SET virtualBalance = virtualBalance + \'"+ str(userCpc) +"\' WHERE username = \'"+ websiteUsername +"\'")
+            userCpcDecimals = "{:.4f}".format(userCpc)
+            #give the referral user ad money
+            mycursor.execute("SELECT referredBy,userId,country FROM user WHERE username = \'"+ websiteUsername +"\'")
+            userResults = mycursor.fetchall()
+            referralUsername = userResults[0][0]
+            userId = userResults[0][1]
+            userCountry = userResults[0][2]
+            if(referralUsername == "[]"):
+                mycursor.execute("UPDATE user SET virtualBalance = virtualBalance + \'"+ str(userCpcDecimals) +"\' WHERE username = \'"+ websiteUsername +"\'")
+                connector.commit()
+                earningMinusReferral = userCpcDecimals
+                print("GIVE CPC = "+str(earningMinusReferral))
+            else:
+                referralCpc = ((float(userCpcDecimals)*referralTake)/100)
+                referralCpcDecimals = "{:.4f}".format(referralCpc)
+                earningMinusReferral = float(userCpcDecimals)-float(referralCpcDecimals)
+                earningMinusReferral = "{:.4f}".format(earningMinusReferral)
+                mycursor.execute("UPDATE user SET virtualBalance = virtualBalance + \'"+ str(referralCpcDecimals) +"\' WHERE username = \'"+ referralUsername +"\'")
+                connector.commit()
+                print("GIVE REF.CPC = "+str(referralCpcDecimals))
+                #add to the total referralEarnings
+                mycursor.execute("UPDATE user SET referralEarning = referralEarning + \'"+ str(referralCpcDecimals) +"\' WHERE username = \'"+ referralUsername +"\'")
+                connector.commit()
+                mycursor.execute("UPDATE user SET virtualBalance = virtualBalance + \'"+ str(earningMinusReferral) +"\' WHERE username = \'"+ websiteUsername +"\'")
+                connector.commit()
+                print("GIVE CPC = "+str(earningMinusReferral))
+
+            #increase country clicks
+            mycursor.execute("UPDATE country SET clicks = clicks + 1 WHERE code =  \'"+ str(userCountry) +"\'")
             connector.commit()
-            print("GIVE CPC = "+str(userCpc))
 
             #increase clicks
             mycursor.execute("UPDATE adcampaign SET clicks = clicks + 1 WHERE campaignId =  \'"+ websiteCampaignId +"\'")
+            connector.commit()
+            mycursor.execute("UPDATE adcampaign SET clicksToday = clicksToday + 1 WHERE campaignId =  \'"+ websiteCampaignId +"\'")
             connector.commit()
             print("CLICKED")
 
@@ -99,6 +147,10 @@ def website():
             connector.commit()
             print("INCREASE DAILY BUDGET")
             print("DONE")
+            if(websiteXframe == 1): #send message immedialy if xframe == 1 (so the user already waited on the website)
+                bot.send_message(userId, text="You earned "+earningMinusReferral+" DOGE!")
+            else:                   #else wait 10 seconds
+                sendMessage(userId,earningMinusReferral)
 
         except Exception as e:
             print(e)
@@ -106,7 +158,10 @@ def website():
     else:
         abort(400)
 
-
+def sendMessage(userId,earningMinusReferral):
+    bot.send_message(userId, text="Please stay on the site for at least 10 seconds...")
+    time.sleep(10)
+    bot.send_message(userId, text="You earned "+earningMinusReferral+" DOGE!")
 
 
 @app.route('/webhook', methods=['POST'])  #BLOCKIO WEBHOOK

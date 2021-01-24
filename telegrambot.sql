@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 23, 2021 at 12:43 AM
+-- Generation Time: Jan 24, 2021 at 10:29 PM
 -- Server version: 10.4.17-MariaDB
 -- PHP Version: 7.3.25
 
@@ -44,26 +44,32 @@ CREATE TABLE `adcampaign` (
   `dateAdded` date DEFAULT NULL,
   `speed` varchar(20) NOT NULL,
   `reports` int(11) NOT NULL DEFAULT 0,
-  `dailyBudgetSpent` float NOT NULL DEFAULT 0
+  `dailyBudgetSpent` float NOT NULL DEFAULT 0,
+  `clicksToday` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Dumping data for table `adcampaign`
 --
 
-INSERT INTO `adcampaign` (`campaignId`, `title`, `description`, `nsfw`, `clicks`, `cpc`, `dailyBudget`, `status`, `url`, `username`, `country`, `totalclicks`, `seconds`, `dateAdded`, `speed`, `reports`, `dailyBudgetSpent`) VALUES
-(92, 'ssssssssss', 'fffffffffffffff', 1, 0, 0.0294, 2941, 1, 'https://ltcminer.com/42', 'IonutZuZu', 'gb,fr,', 0, -1, '2020-12-06', 'slowest', 0, 0),
-(93, 'ssssssssssssss', 'rrrrrrrrrrrrrrrrrrrrr', 0, 0, 0.441, 2941, 1, 'https://ltcminer.com/42', 'IonutZuZu', 'xx', 0, -1, '2020-12-06', 'faster', 0, 0),
-(94, 'oooooooooooo', 'ppppppppppppppppp', 0, 0, 0.441, 1471, 1, 'https://ltcminer.com/42', 'IonutZuZu', 'xx', 0, -1, '2020-12-06', 'faster', 0, 0),
-(95, 'ooooooooooooo', 'ppppppppppppppp', 0, 0, 0.1471, 2942, 1, 'https://ltcminer.com/42', 'IonutZuZu', 'gb,fr,', 0, 58, '2020-12-06', 'faster', 0, 0),
-(100, 'ppppppppp', 'eeeeeeeeeeeee', 0, 1, 0.1468, 587, 1, 'https://ltcminer.com/42', 'IonutZuZu', 'xx', 0, 3, '2020-12-06', 'faster', 0, 0.2936),
-(108, 'rrrrrrrrrr', 'rrrrrrrrrr', 0, 4, 43, 444, 1, 'https://ltcminer.com/42', 'wwwwwww', 'de', 1, 22, '2020-12-03', 'slow', 0, 0),
-(109, 'ffffSO GRATISSSS', 'ffin f', 1, 0, 0.0221, 1106, 1, 'https://ltcminer.com/42', 'cikamoto', 'xx', 0, -1, '2020-12-26', 'slowest', 0, 0),
-(110, '😳😳😳ds😳😳😳😳', '🤡🤡🤡🤡 ild', 1, 0, 0.3318, 1106, 1, 'https://ltcminer.com/42', 'cikamoto', 'xx', 0, -1, '2020-12-26', 'fastest', 0, 0),
-(112, 'status try', 'statusssssstry', 0, 0, 0.061, 1221, 1, 'https://ltcminer.com/42', 'IonutZuZu', 'xx', 0, -1, '2021-01-12', 'faster', 0, 0),
-(113, '5555555555', '55555555555555555555', 0, 0, 0.1613, 1075, 1, 'https://ltcminer.com/42', 'IonutZuZu', 'xx', 0, -1, '2021-01-16', 'fastest', 0, 0),
-(114, 'ssssssssssssss', 'ddddddddddddddddd', 0, 0, 0.1613, 1075, 1, 'https://www.twitch.tv', 'IonutZuZu', 'xx', 0, -1, '2021-01-16', 'fastest', 0, 0),
-(115, 'wwwwwwwwwwwwwwww', 'wwwwwwwwwwwwwwwwwwwww', 0, 0, 0.1613, 1075, 1, 'https://ltcminer.com/42', 'IonutZuZu', 'xx', 0, 22, '2021-01-16', 'fastest', 0, 0);
+INSERT INTO `adcampaign` (`campaignId`, `title`, `description`, `nsfw`, `clicks`, `cpc`, `dailyBudget`, `status`, `url`, `username`, `country`, `totalclicks`, `seconds`, `dateAdded`, `speed`, `reports`, `dailyBudgetSpent`, `clicksToday`) VALUES
+(92, 'ssssssssss', 'fffffffffffffff', 1, 0, 0.0294, 2941, 1, 'https://ltcminer.com/42', 'IonutZuZu', 'gb,fr,', 0, -1, '2020-12-06', 'slowest', 0, 0, 0),
+(93, 'ssssssssssssss', 'rrrrrrrrrrrrrrrrrrrrr', 1, 0, 0.441, 2941, 1, 'https://ltcminer.com/42', 'IonutZuZu', 'xx', 0, -1, '2020-12-06', 'faster', 0, 0, 0),
+(94, 'oooooooooooo', 'ppppppppppppppppp', 0, 0, 0.441, 1471, 1, 'https://ltcminer.com/42', 'IonutZuZu', 'xx', 0, -1, '2020-12-06', 'faster', 0, 0, 0),
+(95, 'ooooooooooooo', 'ppppppppppppppp', 0, 1, 0.1471, 2942, 1, 'https://ltcminer.com/42', 'IonutZuZu', 'gb,fr,', 0, 58, '2020-12-06', 'faster', 0, 0.1471, 1),
+(100, 'ppppppppp', 'eeeeeeeeeeeee', 0, 19, 0.1468, 587, 1, 'https://ltcminer.com/42', 'IonutZuZu', 'xx', 0, 3, '2020-12-06', 'faster', 0, 2.936, 13),
+(108, 'rrrrrrrrrr', 'rrrrrrrrrr', 0, 4, 43, 444, 1, 'https://ltcminer.com/42', 'wwwwwww', 'de', 1, 22, '2020-12-03', 'slow', 0, 0, 0),
+(109, 'ffffSO o', 'ffin f', 1, 0, 0.0221, 1106, 1, 'https://ltcminer.com/42', 'cikamoto', 'xx', 0, -1, '2020-12-26', 'slowest', 0, 0, 0),
+(110, '😳😳😳ds😳😳😳😳', '🤡🤡🤡🤡 ild', 1, 9, 0.3318, 1106, 1, 'https://ltcminer.com/42', 'cikamoto', 'xx', 0, 5, '2020-12-26', 'fastest', 0, 2.9862, 9),
+(112, 'status try', 'statusssssstry', 0, 0, 0.061, 1221, 0, 'https://ltcminer.com/42', 'IonutZuZu', 'xx', 0, -1, '2021-01-12', 'faster', 0, 0, 0),
+(113, '5555555555', '55555555555555555555', 0, 0, 0.1613, 1075, 1, 'https://ltcminer.com/42', 'IonutZuZu', 'xx', 0, -1, '2021-01-16', 'fastest', 0, 0, 0),
+(114, 'ssssssssssssss', 'ddddddddddddddddd', 0, 0, 0.1613, 1075, 1, 'https://www.twitch.tv', 'IonutZuZu', 'xx', 0, -1, '2021-01-16', 'fastest', 0, 0, 0),
+(115, 'wwwwwwwwwwwwwwww', 'wwwwwwwwwwwwwwwwwwwww', 0, 0, 0.1613, 1075, 0, 'https://ltcminer.com/42', 'IonutZuZu', 'xx', 0, 22, '2021-01-16', 'fastest', 0, 0, 0),
+(116, 'ssssssssss', 'ffffffffffffffff', 0, 0, 0.0112, 28, 1, 'https://www.random.org/', 'IonutZuZu', 'xx', 0, -1, '2021-01-24', 'slowest', 0, 0, 0),
+(117, 'wwwwwwwwww', 'ddddddddddddd', 0, 1, 0.0112, 225, 1, 'https://www.random.org/', 'IonutZuZu', 'xx', 0, -1, '2021-01-24', 'slowest', 0, 0.0112, 1),
+(118, 'ssssssssssssssss', 'gggggggggggggggggggg', 0, 4, 0.0563, 28, 1, 'https://www.random.org/', 'IonutZuZu', 'xx', 0, -1, '2021-01-24', 'faster', 0, 0.2252, 4),
+(119, 'dddddddddddddddddd', 'ggggggggggggggggg', 0, 1, 0.0563, 112, 1, 'https://www.random.org/', 'IonutZuZu', 'xx', 0, -1, '2021-01-24', 'faster', 0, 0.0563, 1),
+(120, 'aaaaaaaaaaaaa', 'bbbbbbbbbbbbb', 0, 0, 0.0112, 28, 1, 'https://www.random.org/', 'IonutZuZu', 'us,', 0, -1, '2021-01-24', 'slowest', 0, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -288,7 +294,7 @@ CREATE TABLE `link` (
 --
 
 INSERT INTO `link` (`customLink`, `username`, `campaignId`) VALUES
-('251230050650', 'IonutZuZu', '100');
+('244880138795', 'IonutZuZu', '110');
 
 -- --------------------------------------------------------
 
@@ -315,7 +321,7 @@ CREATE TABLE `settings` (
 --
 
 INSERT INTO `settings` (`webhook`, `blockIoApi`, `blockIoSecretPin`, `blockIoVersion`, `minDepositAmount`, `minWithdrawAmount`, `botToken`, `mainAccount`, `ownerTake`, `webhookWebsite`, `referralTake`) VALUES
-('http://911514092064.ngrok.io/webhook', '8383-cae2-01f4-720f', 'telegrambot', '2', '1', '4', '1315794495:AAHz5CVPLTqUE3OoTFaXe54ZmrMHHZjL1Rk', '2N1fJnGvvbLexRusQXet77fFAgoL6MuMRDx', 15, 'http://911514092064.ngrok.io/website', 1);
+('http://5eb381202690.ngrok.io/webhook', '8383-cae2-01f4-720f', 'telegrambot', '2', '1', '4', '1315794495:AAHz5CVPLTqUE3OoTFaXe54ZmrMHHZjL1Rk', '2N1fJnGvvbLexRusQXet77fFAgoL6MuMRDx', 15, 'http://5eb381202690.ngrok.io/website', 5);
 
 -- --------------------------------------------------------
 
@@ -372,22 +378,23 @@ CREATE TABLE `user` (
   `username` varchar(128) NOT NULL,
   `dateJoined` date DEFAULT NULL,
   `virtualBalance` float NOT NULL DEFAULT 0,
-  `lastAd` int(11) NOT NULL DEFAULT -1
+  `lastAd` int(11) NOT NULL DEFAULT -1,
+  `referralEarning` float NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Dumping data for table `user`
 --
 
-INSERT INTO `user` (`userId`, `referral`, `taskAlert`, `seeNsfw`, `address`, `referredBy`, `country`, `username`, `dateJoined`, `virtualBalance`, `lastAd`) VALUES
-('302035126', 'XmPAksry', 1, 1, '2N3pp5phiP5qADTh9E8TEKJYmsv5Pt1WfeS', 'IonutZuZu', 'it', 'Arcadell', '2020-12-27', 122, -1),
-('286847584', 'fqpEXDli', 1, 1, '2MwjSr1r1gsUTNN5pJGTNkTZDh9FSrkJK5A', '', 'it', 'cikamoto', '2020-12-26', 40, -1),
-('default', '', 1, 1, '2N1fJnGvvbLexRusQXet77fFAgoL6MuMRDx', '', 'en', 'default', '2021-01-03', 472.99, -1),
-('626602519', 'bPEKnEKO', 1, 1, '2N9DqycM4VedDzM5cJdHD7hARhxQEZM77Wd', '', 'en', 'IonutZuZu', NULL, 1207.8, 100),
-('oppolo', '', 1, 1, '2N22GhmvbrhfCJv9exKHJ7Gvb5L8qu2H2vE', '', 'uk', 'oppolo', '2020-12-09', 2, -1),
-('test', 'wwww', 1, 1, '2N3YcfGc3ozvgUUkZgMQmpjzBVuofChhiLi', '', 'de', 'test', '2020-12-01', 33, -1),
-('374408239', 'LdWxuVuw', 1, 1, '2My1b62H5U4uQiYZvd8nXDt1rxdcQUnzGre', '', 'de', 'Trafficbossadmin', NULL, 4, -1),
-('666666', 'eeeeee', 1, 1, 'wwwwwwwww', 'wwwwwwwww', 'ww', 'wwwwwww', NULL, 5, -1);
+INSERT INTO `user` (`userId`, `referral`, `taskAlert`, `seeNsfw`, `address`, `referredBy`, `country`, `username`, `dateJoined`, `virtualBalance`, `lastAd`, `referralEarning`) VALUES
+('302035126', 'XmPAksry', 1, 1, '2N3pp5phiP5qADTh9E8TEKJYmsv5Pt1WfeS', 'IonutZuZu', 'it', 'Arcadell', '2020-12-27', 122, -1, 0),
+('286847584', 'fqpEXDli', 1, 1, '2MwjSr1r1gsUTNN5pJGTNkTZDh9FSrkJK5A', 'IonutZuZu', 'it', 'cikamoto', '2020-12-26', 36.682, -1, 0),
+('default', '', 1, 1, '2N1fJnGvvbLexRusQXet77fFAgoL6MuMRDx', 'IonutZuZu', 'en', 'default', '2021-01-03', 472.99, -1, 0),
+('626602519', 'bPEKnEKO', 1, 1, '2N9DqycM4VedDzM5cJdHD7hARhxQEZM77Wd', '', 'en', 'IonutZuZu', NULL, 2.7858, 110, 33.55),
+('oppolo', '', 1, 1, '2N22GhmvbrhfCJv9exKHJ7Gvb5L8qu2H2vE', 'IonutZuZu', 'uk', 'oppolo', '2020-12-09', 2, -1, 0),
+('test', 'wwww', 1, 1, '2N3YcfGc3ozvgUUkZgMQmpjzBVuofChhiLi', '', 'de', 'test', '2020-12-01', 33, -1, 0),
+('374408239', 'LdWxuVuw', 1, 1, '2My1b62H5U4uQiYZvd8nXDt1rxdcQUnzGre', '', 'de', 'Trafficbossadmin', NULL, 4, -1, 0),
+('666666', 'eeeeee', 1, 1, 'wwwwwwwww', 'wwwwwwwww', 'ww', 'wwwwwww', NULL, 5, -1, 0);
 
 --
 -- Indexes for dumped tables
@@ -439,7 +446,7 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT for table `adcampaign`
 --
 ALTER TABLE `adcampaign`
-  MODIFY `campaignId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=116;
+  MODIFY `campaignId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=121;
 
 --
 -- AUTO_INCREMENT for table `transaction`

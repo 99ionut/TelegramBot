@@ -86,16 +86,27 @@ body {
 
     //get webhook
     $webhook = "";
-	$sql = "select webhookWebsite,ownerTake from settings";
+	$sql = "select webhookWebsite,ownerTake,referralTake from settings";
 	$result = $mysqli->query($sql);
 	if ($result) {
 		if ($result->num_rows > 0) {
 			while ($row = $result->fetch_array()) {
 				$webhook = $row['webhookWebsite'];
 				$ownerTake = $row['ownerTake'];
+				$referralTake = $row['referralTake'];
 			}
 		}
-	}	
+	}
+
+	$sql = "SELECT referredBy FROM user WHERE username = '".$username."'";
+	$result = $mysqli->query($sql);
+	if ($result) {
+		if ($result->num_rows > 0) {
+				$referredBy = 1;
+			} else {
+				$referredBy = 0;	
+			}
+		}
 	
 	//get adCampaign
 	if($valid != 0){
@@ -107,7 +118,17 @@ body {
 					$url = $row['url'];
 					$seconds = $row['seconds'];
 					$cpc = $row['cpc'];
-					$userCpc = $cpc-(($cpc*$ownerTake)/100);
+					
+					if($referredBy == 1){
+						$userCpc = $cpc -(($cpc*$ownerTake)/100);
+						$referralCpc = (($userCpc*$referralTake)/100);
+						$userCpc = $userCpc - $referralCpc;
+					} else {
+						$userCpc = $cpc-(($cpc*$ownerTake)/100);
+					}
+					
+					
+					
 					if($seconds == "-1"){
 						$xframe = 0; // if seconds = -1 means that the user doesn't want to force users to see the ad
 					}else{
@@ -140,7 +161,7 @@ body {
         
 		var row_data = JSON.stringify({"customLink": customLink,"username": username,"campaignId": campaignId,"xframe": xframe});
         //console.log(row_data);
-        $.post("http://911514092064.ngrok.io/website", row_data);
+        $.post(""+url+"", row_data);
 	
 		});
     });
@@ -192,7 +213,7 @@ function startCounting(){
 				
 				if(flag == 1){  //only send 1 webhook and update text 1 time
 				flag = 0;
-					document.getElementById("timer").innerHTML = "You earned "+ cpc +" DOGE!";	
+					document.getElementById("timer").innerHTML = "You earned "+ cpc.toFixed(4) +" DOGE!";	
 					console.log("SENT");
 					$('#send').click();
 					//postDataToWebhook();	

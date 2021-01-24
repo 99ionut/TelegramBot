@@ -8,6 +8,8 @@ import hashlib
 import dbConnector
 import validators
 import requests
+import time
+import threading
 from pycoingecko import CoinGeckoAPI
 from datetime import date
 
@@ -18,12 +20,13 @@ connector = dbConnector.connect()
 
 # BLOCK.IO
 mycursor = connector.cursor()
-mycursor.execute("SELECT blockIoApi,blockIoSecretPin,blockIoVersion,botToken FROM settings")
+mycursor.execute("SELECT blockIoApi,blockIoSecretPin,blockIoVersion,botToken,referralTake FROM settings")
 botSettings = mycursor.fetchall()
 print(str("BOT SETTINGS = "+ str(botSettings)))
 blockIoApi = botSettings[0][0]
 blockIoSecretPin = botSettings[0][1]
 blockIoVersion = botSettings[0][2]
+settingsOwnerTake = botSettings[0][4]
 block_io = BlockIo(str(blockIoApi), str(blockIoSecretPin), str(blockIoVersion))
 
 # BOT TOKEN
@@ -79,6 +82,14 @@ countries = ["en", "id", "us", "ru", "sg", "de", "ng", "vn", "ph", "in", "nl", "
 "cy", "pg", "gn", "bi", "ls", "ee", "ne", "mw", "bw", "mu", "mt", "mp", "to", "rw", "vc", "om", "nc", "ky", "sc", "gi", 
 "fj", "cv", "lr", "tc", "gd", "bh", "sl", "bb", "pf", "sm", "er", "xx"]
 
+# KEEP ALIVE function?
+def keepAlive():
+    while True:
+        time.sleep(60)
+        print("keep alive")
+
+threading.Timer(1, keepAlive).start()
+
 # //////////////////////////////// COMMANDS ////////////////////////////////
 # Create the bot
 bot = telebot.TeleBot(token)
@@ -116,7 +127,6 @@ def start_message(message):
         print("user not inserted")
         pass
     startMenu(message)
-
 
 # Menu command
 @bot.message_handler(commands=['menu'])
@@ -315,7 +325,7 @@ def visitSitesMenu(message):
             text='🛑 Report', callback_data="reportAd"), telebot.types.InlineKeyboardButton(
             text='⏭ Skip', callback_data="skipAd"))
         bot.send_message(
-        message.chat.id, text="custom link = http://www.i0nut.com/earndogetoday/visit.php?ad="+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
+        message.chat.id, text="custom link = localhost/earndogetoday/visit.php?ad="+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
 
     else: #if there is a last ad show that one
         print("last ad exists")
@@ -337,12 +347,11 @@ def visitSitesMenu(message):
             text='🛑 Report', callback_data="reportAd"), telebot.types.InlineKeyboardButton(
             text='⏭ Skip', callback_data="skipAd"))
         bot.send_message(
-        message.chat.id, text="custom link = http://www.i0nut.com/earndogetoday/visit.php?ad="+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
-#todo if not enough ads enabled crash?
+        message.chat.id, text="custom link = localhost/earndogetoday/visit.php?ad="+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
 #todo delete from recent ad if disabled
 
 # return an ad
-def getRandomAd(message):
+def getRandomAdOld(message):
     # 50% to get a high paying ad (fasters), 30% to get a medium paying ad (faster), 20% to get a low paying ad(slow)
     randomPaying = (random.randint(0, 9))
     if (randomPaying >= 0 and randomPaying <= 4):
@@ -370,7 +379,7 @@ def getRandomAd(message):
 
         if(str(ad) == "[]"):
             getRandomAd(message)
-
+ 
         else:
             print("SELECT * FROM adcampaign WHERE speed = \'fastest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' and status=\'1\'")
             print("FASTEST")
@@ -410,7 +419,7 @@ def getRandomAd(message):
 
         if(str(ad) == "[]"):
             getRandomAd(message)
-
+ 
         else:
             print("SELECT * FROM adcampaign WHERE speed = \'faster\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' and status=\'1\'")
             print("FASTER")
@@ -449,7 +458,7 @@ def getRandomAd(message):
 
         if(str(ad) == "[]"):
             getRandomAd(message)
-
+          
         else:
             print("SELECT * FROM adcampaign WHERE speed = \'slowest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' and status=\'1\'")
             print("SLOW")
@@ -467,6 +476,132 @@ def getRandomAd(message):
     else:
         getRandomAd(message)
 
+def getRandomAd(message):
+    # 50% to get a high paying ad (fasters), 30% to get a medium paying ad (faster), 20% to get a low paying ad(slow)
+    selectedAd = ""
+
+    while (selectedAd == ""):
+        randomPaying = (random.randint(0, 9))
+        #print("RANDOMpaying = "+str(randomPaying))
+        if (randomPaying >= 0 and randomPaying <= 4):
+            # HIGH PAYING
+            # 30% to 0-10s, 25% to 10-20s, 20% to 20-30s, 15% to 30-40s, 5% to 40-50s, 5% to 50-60s. 
+            randomSeconds = (random.randint(0, 99))  # fastest paying and <= 10 s
+            if(randomSeconds >= 0 and randomSeconds <= 29):  # fastest paying and <= 10 s
+                seconds = 10
+            elif(randomSeconds >= 30 and randomSeconds <= 54):  # fastest paying and <= 20 s
+                seconds = 20
+            elif(randomSeconds >= 55 and randomSeconds <= 74):  # fastest paying and <= 30 s
+                seconds = 30
+            elif(randomSeconds >= 75 and randomSeconds <= 89):  # fastest paying and <= 40 s
+                seconds = 40
+            elif(randomSeconds >= 90 and randomSeconds <= 94):  # fastest paying and <= 50 s
+                seconds = 50
+            elif(randomSeconds >= 95 and randomSeconds <= 99):  # fastest paying and <= 60 s
+                seconds = 60
+
+            mycursor = connector.cursor()
+            if(seconds == 10):
+                mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'fastest\' and seconds >= -1 and seconds <= \'"+str(seconds)+"\'and status=\'1\' ")
+                ad = mycursor.fetchall()
+            else: 
+                mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'fastest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\'and status=\'1\' ")
+                ad = mycursor.fetchall()
+                
+            if(str(ad) == "[]"):
+                selectedAd = ""
+            else:
+                print("FASTEST")
+                print("seconds = "+str(seconds))
+
+                adnumber = 0
+                for i in ad:
+                    # print("adNumber = "+str(adnumber)+" "+str(ad[adnumber]))
+                    adnumber = adnumber + 1
+
+                randomAdNumber = (random.randint(0, adnumber-1))
+                print("ad selected = "+str(ad[randomAdNumber]))
+                selectedAd = ad[randomAdNumber]
+
+        elif (randomPaying >= 5 and randomPaying <= 7):
+            # MEDIUM PAYING
+            # 30% to 0-10s, 25% to 10-20s, 20% to 20-30s, 15% to 30-40s, 5% to 40-50s, 5% to 50-60s. 
+            randomSeconds = (random.randint(0, 99))
+            if(randomSeconds >= 0 and randomSeconds <= 29):  # faster paying and <= 10 s
+                seconds = 10
+            elif(randomSeconds >= 30 and randomSeconds <= 54):  # faster paying and <= 20 s
+                seconds = 20
+            elif(randomSeconds >= 55 and randomSeconds <= 74):  # faster paying and <= 30 s
+                seconds = 30
+            elif(randomSeconds >= 75 and randomSeconds <= 89):  # faster paying and <= 40 s
+                seconds = 40
+            elif(randomSeconds >= 90 and randomSeconds <= 94):  # faster paying and <= 50 s
+                seconds = 50
+            elif(randomSeconds >= 95 and randomSeconds <= 99):  # faster paying and <= 60 s
+                seconds = 60
+
+            mycursor = connector.cursor()
+            if(seconds == 10):
+                mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'faster\' and seconds >= -1 and seconds <= \'"+str(seconds)+"\' and status=\'1\'")
+                ad = mycursor.fetchall()
+            else:
+                mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'faster\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' and status=\'1\'")
+                ad = mycursor.fetchall()
+               
+            if(str(ad) == "[]"):
+                selectedAd = ""
+            else:
+                print("FASTER")
+                print("seconds = "+str(seconds))
+                adnumber = 0
+                for i in ad:
+                    # print("adNumber = "+str(adnumber)+" "+str(ad[adnumber]))
+                    adnumber = adnumber + 1
+
+                randomAdNumber = (random.randint(0, adnumber-1))
+                print("ad selected = "+str(ad[randomAdNumber]))
+                selectedAd = ad[randomAdNumber]
+
+        elif (randomPaying >= 8 and randomPaying <= 9):
+            # LOW PAYING
+            # 30% to 0-10s, 25% to 10-20s, 20% to 20-30s, 15% to 30-40s, 5% to 40-50s, 5% to 50-60s.
+            randomSeconds = (random.randint(0, 99))
+            if(randomSeconds >= 0 and randomSeconds <= 29):  # slowest paying and <= 10 s
+                seconds = 10
+            elif(randomSeconds >= 30 and randomSeconds <= 54):  # slowest paying and <= 20 s
+                seconds = 20
+            elif(randomSeconds >= 55 and randomSeconds <= 74):  # slowest paying and <= 30 s
+                seconds = 30
+            elif(randomSeconds >= 75 and randomSeconds <= 89):  # slowest paying and <= 40 s
+                seconds = 40
+            elif(randomSeconds >= 90 and randomSeconds <= 94):  # slowest paying and <= 50 s
+                seconds = 50
+            elif(randomSeconds >= 95 and randomSeconds <= 99):  # slowest paying and <= 60 s
+                seconds = 60
+
+            mycursor = connector.cursor()
+            if(seconds == 10):
+                mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'slowest\' and seconds >= -1 and seconds <= \'"+str(seconds)+"\' and status=\'1\' ")
+                ad = mycursor.fetchall()
+            else:
+                mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'slowest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' and status=\'1\' ")
+                ad = mycursor.fetchall()
+                
+            if(str(ad) == "[]"):
+                selectedAd = ""        
+            else:
+                print("SLOW")
+                print("seconds = "+str(seconds))
+
+                adnumber = 0
+                for i in ad:
+                    # print("adNumber = "+str(adnumber)+" "+str(ad[adnumber]))
+                    adnumber = adnumber + 1
+
+                randomAdNumber = (random.randint(0, adnumber-1))
+                print("ad selected = "+str(ad[randomAdNumber]))
+                selectedAd = ad[randomAdNumber]
+    return selectedAd
 
 def startMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -497,8 +632,14 @@ def referralMenu(message):
     keyboard.add('🙌🏻 Referrals', '⚙ Settings')
     keyboard.add('📊 My ads')
 
+    mycursor = connector.cursor()
+    mycursor.execute("SELECT COUNT(referredBy) FROM user WHERE referredBy = '"+ str(message.chat.username) +"'")
+    referredUsers = mycursor.fetchall()[0][0]
+    mycursor.execute("SELECT referralEarning FROM user WHERE username = '"+ str(message.chat.username) +"'")
+    referralEarnings = mycursor.fetchall()[0][0]
+
     bot.send_message(message.chat.id,
-                    'You have *0* referrals, and earned *0* DOGE. \nTo refer people, send them to: \n\n'+getReferralCode(message.chat.username)+' \n\nYou will earn *15%* of each user\'s earnings from tasks, and *1%* of DOGE they spend on ads.',
+                    'You have *'+str(referredUsers)+'* referrals, and earned *'+str(referralEarnings)+'* DOGE. \nTo refer people, send them to: \n\n'+getReferralCode(message.chat.username)+' \n\nYou will earn *' +str(settingsOwnerTake)+ '%* of each user\'s earnings from tasks, and *1%* of DOGE they spend on ads.',
                     parse_mode='Markdown', reply_markup=keyboard)
 
 
