@@ -73,10 +73,10 @@ def website():
             print("OWNER TAKE % = "+str(ownerTake))
             print("REFERRAL TAKE % = "+str(referralTake))
 
-            #delete temporary link
-            #mycursor.execute("DELETE FROM link WHERE customLink = \'"+ websiteCustomLink +"\'")
+            ###delete temporary link
+            mycursor.execute("DELETE FROM link WHERE customLink = \'"+ websiteCustomLink +"\'")
             print("DELETED LINK")
-            #connector.commit()
+            connector.commit()
 
             #get the campaign cpc,dailyBudget,dailyBudgetSpent,username 
             mycursor.execute("SELECT cpc,dailyBudget,dailyBudgetSpent,username FROM adcampaign WHERE campaignId = \'"+ websiteCampaignId +"\'")

@@ -12,6 +12,7 @@ import time
 import threading
 from pycoingecko import CoinGeckoAPI
 from datetime import date
+from linkpreview import link_preview
 
 # //////////////////////////////// SETTINGS ////////////////////////////////
 
@@ -132,6 +133,7 @@ def start_message(message):
 @bot.message_handler(commands=['menu'])
 def menu_message(message):
     startMenu(message)
+    
 
 
 # visit command
@@ -653,11 +655,11 @@ def adsMenu(message):
 
     markupEnabled.add(telebot.types.InlineKeyboardButton(
                 text='✏️ Edit', callback_data="editAd"), telebot.types.InlineKeyboardButton(
-                text='✅ Enable', callback_data="changeAdStateEnabled"))
+                text='🚫 Disable', callback_data="changeAdStateEnabled"))
 
     markupDisabled.add(telebot.types.InlineKeyboardButton(
                     text='✏️ Edit', callback_data="editAd"), telebot.types.InlineKeyboardButton(
-                    text='🚫 Disable', callback_data="changeAdStateDisabled"))
+                    text='✅ Enable', callback_data="changeAdStateDisabled"))
     # if the user DESN'T have any ads
     if checkUserAds(message.chat.username) == 0:
         bot.send_message(message.chat.id, "You don't have any ad campaigns yet.", parse_mode='Markdown',
@@ -743,6 +745,14 @@ def newAdTitleMenu(message, url):
 def addTitle(message, url):
     if(str(message.text) == '❌Cancel'):
         cancelAdMenu(message)
+    elif(str(message.text) == '⏭️ Skip'):
+        preview = link_preview(url)
+        print("title:", preview.title)
+        if(preview.title == ""):
+            newAdDescriptionMenu(message, url, "No Title")
+        else:
+            newAdDescriptionMenu(message, url, str(preview.title))
+    
     elif(len(str(message.text)) >= 5 and len(str(message.text)) <= 80):
         newAdDescriptionMenu(message, url, str(message.text))
     else:
@@ -760,6 +770,15 @@ def newAdDescriptionMenu(message, url, adtitle):
 def addDescription(message, url, adtitle):
     if(str(message.text) == '❌Cancel'):
         cancelAdMenu(message)
+    elif(str(message.text) == '⏭️ Skip'):
+        preview = link_preview(url)
+        print("description:", preview.description)
+
+        if(preview.description == ""):
+            newAdNsfwMenu(message, url, adtitle, "No Description")
+        else:
+            newAdNsfwMenu(message, url, adtitle, str(preview.description))
+    
     elif(len(str(message.text)) >= 10 and len(str(message.text)) <= 180):
         newAdNsfwMenu(message, url, adtitle, str(message.text))
     else:
@@ -1054,14 +1073,14 @@ def withdrawAddressAmount(message,address):
                 bot.send_message(message.chat.id, "Are you sure you want to send *"+ str(amount.text) + " DOGE* to *"+ str(address.text) +"* ? \n\nYou will be charged a blockchain fee of " + str(fee) + " DOGE.",
                      parse_mode='Markdown',
                      reply_markup=keyboard)
-                bot.register_next_step_handler(message=message, amount = amount, address = address, callback=withdrawAddressSend)
+                bot.register_next_step_handler(message=message, amount = amount, address = address, fee = fee, callback=withdrawAddressSend)
             else:
                 withdrawAddressConfirm(address)
         except Exception as e:
             print("ERROR withdrawAddressAmount = "+str(e))
             withdrawAddressConfirm(address)
 
-def withdrawAddressSend(message,amount,address):
+def withdrawAddressSend(message,amount,address,fee):
     if(str(message.text)=='❌ Cancel'):
         cancelWithdrawMenu(message) 
     elif(str(message.text)=='✅ Confirm'):
@@ -1202,7 +1221,7 @@ def query_handler(call):
             editKeyboard = telebot.types.InlineKeyboardMarkup()
             editKeyboard.add(telebot.types.InlineKeyboardButton(
             text='✏️ Edit', callback_data="editAd"), telebot.types.InlineKeyboardButton(
-            text='🚫 Disable', callback_data="changeAdStateDisabled"))
+            text='✅ Enable', callback_data="changeAdStateDisabled"))
             bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=editKeyboard)
             
         elif call.data == 'changeAdStateDisabled':      
@@ -1214,26 +1233,33 @@ def query_handler(call):
             print("USER AD = "+str(userAd))
         
             mycursor = connector.cursor()
-            mycursor.execute("UPDATE adcampaign SET status = 1 WHERE campaignId = \'" + str(userAd)+'\'')
-            connector.commit()
+            mycursor.execute("SELECT cpc FROM adcampaign WHERE username = \'" + str(call.message.chat.username) +"\'")
+            disabledAdCpc = mycursor.fetchall()[0][0]
+            print("disabledAdCpc = "+str(disabledAdCpc))
+            if(float(disabledAdCpc) > float(getUserBalance(str(call.message.chat.username)))): #if not enough founds
+                pass
+            else:
+                mycursor = connector.cursor()
+                mycursor.execute("UPDATE adcampaign SET status = 1 WHERE campaignId = \'" + str(userAd)+'\'')
+                connector.commit()
 
-            newMessage = str(call.message.text).replace('Disabled 🚫','Enabled ✅')
-            newMessage = newMessage.replace('Campaign#','*Campaign#')
-            newMessage = newMessage.replace('Title:','*Title:*')
-            newMessage = newMessage.replace('Description:','*Description:')
-            newMessage = newMessage.replace('Status:','Status:*')
-            newMessage = newMessage.replace('CPC:','*CPC:*')
-            newMessage = newMessage.replace('Daily Budget:','*Daily Budget:*')
-            newMessage = newMessage.replace('Clicks:','*Clicks:*')
-            newMessage = newMessage.replace('total/','*total/*')
-            newMessage = newMessage.replace('today','*today')
-            bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=newMessage, parse_mode='Markdown')
+                newMessage = str(call.message.text).replace('Disabled 🚫','Enabled ✅')
+                newMessage = newMessage.replace('Campaign#','*Campaign#')
+                newMessage = newMessage.replace('Title:','*Title:*')
+                newMessage = newMessage.replace('Description:','*Description:')
+                newMessage = newMessage.replace('Status:','Status:*')
+                newMessage = newMessage.replace('CPC:','*CPC:*')
+                newMessage = newMessage.replace('Daily Budget:','*Daily Budget:*')
+                newMessage = newMessage.replace('Clicks:','*Clicks:*')
+                newMessage = newMessage.replace('total/','*total/*')
+                newMessage = newMessage.replace('today','*today')
+                bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=newMessage, parse_mode='Markdown')
 
-            editKeyboard = telebot.types.InlineKeyboardMarkup()
-            editKeyboard.add(telebot.types.InlineKeyboardButton(
-            text='✏️ Edit', callback_data="editAd"), telebot.types.InlineKeyboardButton(
-            text='✅ Enable', callback_data="changeAdStateEnabled"))
-            bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=editKeyboard)
+                editKeyboard = telebot.types.InlineKeyboardMarkup()
+                editKeyboard.add(telebot.types.InlineKeyboardButton(
+                text='✏️ Edit', callback_data="editAd"), telebot.types.InlineKeyboardButton(
+                text='🚫 Disable', callback_data="changeAdStateEnabled"))
+                bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=editKeyboard)
             
         elif call.data == 'editAd':
 
