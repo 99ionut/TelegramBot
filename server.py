@@ -4,7 +4,7 @@ from block_io import BlockIo
 import math
 import telebot
 import time
-
+from flask_cors import CORS, cross_origin
 #///////////////// DB CONNECT
 def connect():
     return mysql.connector.connect(
@@ -44,15 +44,21 @@ mycursor = connector.cursor()
 #block_io.enable_notification(notification_id='3614d812342f08eba83cfac8')
 #block_io.list_notifications(page='1')
 
+#todo https not http because http doesnt work irl
 @app.route('/website', methods=['POST'])  #WEBSITE WEBHOOK
+@cross_origin()
 def website():
+    print(str(request))
     if request.method == 'POST':
         
         try:
             #get webhook data
-            print("WEBSITE WEBHOOK")    
-            dati = request.get_json(force=True)
-            print(dati)     
+            print("WEBSITE WEBHOOK")
+          
+            dati = request.values
+            print(str(dati))
+ 
+              
             websiteXframe = dati["xframe"]
             print("websiteXframe = "+websiteXframe)
             websiteCustomLink = dati["customLink"]
@@ -74,9 +80,9 @@ def website():
             print("REFERRAL TAKE % = "+str(referralTake))
 
             ###delete temporary link
-            mycursor.execute("DELETE FROM link WHERE customLink = \'"+ websiteCustomLink +"\'")
+            #mycursor.execute("DELETE FROM link WHERE customLink = \'"+ websiteCustomLink +"\'")
             print("DELETED LINK")
-            connector.commit()
+            #connector.commit()
 
             #get the campaign cpc,dailyBudget,dailyBudgetSpent,username 
             mycursor.execute("SELECT cpc,dailyBudget,dailyBudgetSpent,username FROM adcampaign WHERE campaignId = \'"+ websiteCampaignId +"\'")
@@ -233,6 +239,9 @@ def updateUser(address,balance,mycursor,txid):
     
 
 if __name__ == '__main__':
+    cors = CORS(app)
+    app.config['CORS_HEADERS'] = 'Content-Type'
     app.run()
+    
     #from waitress import serve
     #serve(app, host="0.0.0.0", port=8080)
