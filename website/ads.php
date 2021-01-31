@@ -69,6 +69,12 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 		.dataTables_wrapper .dataTables_filter input {
 			background-color:white!important;
 		}
+		
+		.button-error {
+            background: rgb(202, 60, 60);
+			color:white;
+            /* this is a maroon */
+        }
 
 	</style>
 </head>
@@ -92,8 +98,32 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 
 	// charset utf-8
 	$mysqli->set_charset("utf8");
-	?>
 	
+	if (isset($_GET['remove'])) {
+		$remove = $_GET['remove'];
+		$sql = "UPDATE user SET lastAd = -1 WHERE lastAd = '$remove'";
+		$result = $mysqli->query($sql);
+		$sql = "DELETE FROM adcampaign WHERE campaignId = '$remove'";
+		$result = $mysqli->query($sql);
+	}
+	?>
+
+<script type="text/javascript">
+	function removeAd(id) {
+		var txt;
+		var r = confirm("Are you sure you want to remove this ad?");
+		if (r == true) {
+			txt = "You pressed OK!";
+			console.log(txt);
+			console.log(id);
+			window.location.href="./ads.php?remove="+id;
+		} else {
+			txt = "You pressed Cancel!";
+			console.log(txt);
+		}	
+	}
+</script>
+
 <div class="mt-3 text-center"></div>
         <div class="card card-login mx-auto mt-3">
             <div class="card-body">
@@ -130,6 +160,7 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 			echo "<th>date</th>";
 			echo "<th>speed</th>";
 			echo "<th>reports</th>";
+			echo "<th>remove</th>";
 			
         echo "</tr>";
 		echo "</thead>";
@@ -152,6 +183,7 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 				echo "<td>" . $row['dateAdded'] . "</td>";
 				echo "<td>" . $row['speed'] . "</td>";
 				echo "<td>" . $row['reports'] . "</td>";
+				echo "<td> <a class='button-error pure-button' onclick='removeAd(".$row['campaignId'].")'>Remove</a></td>";
 				echo "</tr>";
 			}
 		} else "nessun dato";
@@ -166,6 +198,7 @@ $(document).ready( function () {
     $('#transactionTable').DataTable({
         "order": [[ 5, "desc" ]]
     });
+	
 } );
 </script>
 
