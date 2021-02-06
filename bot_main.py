@@ -10,11 +10,16 @@ import validators
 import requests
 import time
 import threading
+import os
+from botProcessHandlerIonut import restartBot
 from pycoingecko import CoinGeckoAPI
 from datetime import date
 from linkpreview import link_preview
 
 # //////////////////////////////// SETTINGS ////////////////////////////////
+
+# WEBSITE
+websiteUrl = "https://www.i0nut.com/earndogetoday/visit.php?ad="
 
 # DB CONNECTOR SINGLETON
 connector = dbConnector.connect()
@@ -85,11 +90,24 @@ countries = ["en", "id", "us", "ru", "sg", "de", "ng", "vn", "ph", "in", "nl", "
 
 # KEEP ALIVE function?
 def keepAlive():
-    while True:
-        time.sleep(60)
-        print("keep alive")
+    print("bot started")
+    try:
+        while True:
+            time.sleep(60)
+            print("keep alive")
+            mycursor = connector.cursor()
+            mycursor.execute("SELECT * FROM user WHERE username = 'IonutZuZu'")
+            keepAliveUser = mycursor.fetchall()
+            print("keep alive User = "+keepAliveUser[0][0])
+            
+            keyboard = telebot.types.ReplyKeyboardMarkup(True)
+            bot.send_message(str(626602519),'Bot is alive,'+str(keepAliveUser[0][0]),parse_mode='Markdown', reply_markup=keyboard)
+    except ValueError:
+        print("restarting...")
+        restartBot()
 
-threading.Timer(1, keepAlive).start()
+threading.Thread(target=keepAlive, daemon=True).start()
+#threading.Timer(1, keepAlive).start()
 
 # //////////////////////////////// COMMANDS ////////////////////////////////
 # Create the bot
@@ -102,14 +120,18 @@ def start_message(message):
     if checkUserId(message.chat.username) == 1:  # if user id is new insert
 
         print("user inserted")
-        userAddress = block_io.get_new_address(label=message.chat.username)
+        try:
+            userAddress = block_io.get_new_address(label=message.chat.username)
+        except:
+            print("errore inserimento address")
+
         print(userAddress["data"]["address"])
         insertUser(chatId, userAddress["data"]["address"],message.from_user.language_code, message.chat.username)
         createReferralCode(message)
 
         referralRecieved = message.text.replace('/start ', '')
         print("referral = "+str(referralRecieved))
-        if (referralRecieved == ""): 
+        if (referralRecieved == "" or referralRecieved == "/start"): 
             print("no referral inserted")
         else:
             mycursor = connector.cursor()
@@ -322,12 +344,12 @@ def visitSitesMenu(message):
         connector.commit()
 
         markup.add(telebot.types.InlineKeyboardButton(
-            text='🔎 Go to website', url=str(ad[8]), callback_data="goToWebsite"))
+            text='🔎 Go to website', url=str(websiteUrl + customLink), callback_data="goToWebsite"))
         markup.add(telebot.types.InlineKeyboardButton(
             text='🛑 Report', callback_data="reportAd"), telebot.types.InlineKeyboardButton(
             text='⏭ Skip', callback_data="skipAd"))
         bot.send_message(
-        message.chat.id, text="custom link = localhost/earndogetoday/visit.php?ad="+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
+            message.chat.id, text=""+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
 
     else: #if there is a last ad show that one
         print("last ad exists")
@@ -344,12 +366,11 @@ def visitSitesMenu(message):
         customLink = str(customLink[0][0])
        
         markup.add(telebot.types.InlineKeyboardButton(
-            text='🔎 Go to website', url=str(ad[8]), callback_data="goToWebsite"))
+            text='🔎 Go to website', url=str(websiteUrl + customLink), callback_data="goToWebsite"))
         markup.add(telebot.types.InlineKeyboardButton(
             text='🛑 Report', callback_data="reportAd"), telebot.types.InlineKeyboardButton(
             text='⏭ Skip', callback_data="skipAd"))
-        bot.send_message(
-        message.chat.id, text="custom link = localhost/earndogetoday/visit.php?ad="+ customLink +"\n\n"+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
+        bot.send_message(message.chat.id, text=""+str(ad[1])+"\n\n"+str(ad[2])+"\n\n--------------------- \nPress the \"Visit website\" button to earn DOGE.\nYou will be redirected to a third party site." , reply_markup=markup)
 #todo delete from recent ad if disabled
 
 # return an ad

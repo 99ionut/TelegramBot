@@ -4,6 +4,7 @@ from block_io import BlockIo
 import math
 import telebot
 import time
+from botProcessHandlerIonut import restartBot
 from flask_cors import CORS, cross_origin
 #///////////////// DB CONNECT
 def connect():
@@ -45,6 +46,20 @@ mycursor = connector.cursor()
 #block_io.list_notifications(page='1')
 
 #todo https not http because http doesnt work irl
+
+@app.route('/restart', methods=['POST'])  #WEBSITE WEBHOOK
+@cross_origin()
+def restart():
+    print(str(request))
+    if request.method == 'POST':
+        #get webhook data
+        print("restarting from website...")
+        restartBot()
+        return 'success', 200       
+    else:
+        abort(400)
+
+
 @app.route('/website', methods=['POST'])  #WEBSITE WEBHOOK
 @cross_origin()
 def website():
@@ -171,6 +186,7 @@ def sendMessage(userId,earningMinusReferral):
 
 
 @app.route('/webhook', methods=['POST'])  #BLOCKIO WEBHOOK
+@cross_origin()
 def webhook():
     if request.method == 'POST':
         #print(request.json)   

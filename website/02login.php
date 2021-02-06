@@ -46,19 +46,7 @@ session_start();
 
 	<?php
 
-	define('DB_SERVER', 'localhost');
-	define('DB_USERNAME', 'root');
-	define('DB_PASSWORD', '');
-	define('DB_NAME', 'telegrambot');
-
-	// connessione
-	$mysqli = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
-	if ($mysqli->connect_errno) {
-		printf("Connect failed: %s\n", $mysqli->connect_error);
-		exit();
-	}
-	// charset utf-8
-	$mysqli->set_charset("utf8");
+	include 'connection.php';
 
 	// SQLinjection
 	$utente = $mysqli->real_escape_string($utente);

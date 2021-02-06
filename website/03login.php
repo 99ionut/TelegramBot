@@ -99,23 +99,9 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 
 <body>
 <?php
-	//error_reporting(E_ERROR | E_PARSE); 
-	error_reporting(E_ALL ^ E_WARNING);
-	//echo "oggi è: " . date("d-m-Y");
-	define('DB_SERVER', 'localhost');
-	define('DB_USERNAME', 'root');
-	define('DB_PASSWORD', '');
-	define('DB_NAME', 'telegrambot');
 
-	// connessione
-	$mysqli = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
-	if ($mysqli->connect_errno) {
-		printf("Connect failed: %s\n", $mysqli->connect_error);
-		exit();
-	}
-
-	// charset utf-8
-	$mysqli->set_charset("utf8");
+	include 'connection.php';
+	
 	?>
 	
 <div class="mt-3 text-center"></div>

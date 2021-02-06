@@ -84,23 +84,7 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 
 <body>
 <?php
-	//error_reporting(E_ERROR | E_PARSE); 
-	error_reporting(E_ALL ^ E_WARNING);
-	//echo "oggi è: " . date("d-m-Y");
-	define('DB_SERVER', 'localhost');
-	define('DB_USERNAME', 'root');
-	define('DB_PASSWORD', '');
-	define('DB_NAME', 'telegrambot');
-
-	// connessione
-	$mysqli = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
-	if ($mysqli->connect_errno) {
-		printf("Connect failed: %s\n", $mysqli->connect_error);
-		exit();
-	}
-
-	// charset utf-8
-	$mysqli->set_charset("utf8");
+	include 'connection.php';
 	
 	
 	if (isset($_POST['txtWebhook'])) {
@@ -116,6 +100,16 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 	} elseif (isset($_POST['txtWebhookWebsite'])) {
 		$txtWebhookWebsite = $_POST['txtWebhookWebsite'];
 		$sql = "UPDATE settings SET webhookWebsite = '$txtWebhookWebsite'";
+		$result = $mysqli->query($sql);
+		if ($result) {
+			echo '<script language="javascript">';
+			echo 'alert("SETTINGS CHANGED!")';
+			echo '</script>';
+		}
+		
+	} elseif (isset($_POST['txtWebhookRestart'])) {
+		$txtWebhookRestart = $_POST['txtWebhookRestart'];
+		$sql = "UPDATE settings SET webhookRestart = '$txtWebhookRestart'";
 		$result = $mysqli->query($sql);
 		if ($result) {
 			echo '<script language="javascript">';
@@ -232,6 +226,8 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 			while ($row = $result->fetch_array()) {
 				echo "<div><b>BLOCKIO Webhook</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  " . $row['webhook'] . " <form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='webhook' value='CHANGE'>  <input type='text' name='txtWebhook' ></form></div><br> ";
 				echo "<div><b>Website Webhook</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['webhookWebsite'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='webhookWebsite' value='CHANGE'> <input type='text' name='txtWebhookWebsite' ></form></div><br>";
+				echo "<div><b>Restart Webhook</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['webhookRestart'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='webhookRestart' value='CHANGE'> <input type='text' name='txtWebhookRestart' ></form></div><br>";
+				
 				echo "<div><b>BLOCKIO Api</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['blockIoApi'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='blockIoApi' value='CHANGE'> <input type='text'  name='txtBlockIoApi' ></form></div><br>";
 				echo "<div><b>BLOCKIO Secret Pin</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['blockIoSecretPin'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='blockIoSecretPin' value='CHANGE'> <input type='text' name='txtBlockIoSecretPin' ></form></div><br>";
 				echo "<div><b>BLOCKIO Version</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['blockIoVersion'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='blockIoVersion' value='CHANGE'> <input type='text' name='txtBlockIoVersion' ></form></div><br>";
@@ -303,7 +299,7 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 
 <a style="margin-left:50px" class="button-warning pure-button" href=" ./03login.php">BACK</a>
 	
-
+<a style="float:right; margin-right:50px; background-color:black; color:white" class="button-warning pure-button" href="./restart.php">RESTART BOT</a>
 </body>
 
 </html>

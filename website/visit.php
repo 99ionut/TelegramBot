@@ -40,21 +40,7 @@ body {
 	<br>
 <?php
 
-		
-	//DB CONNECTION
-	error_reporting(E_ALL ^ E_WARNING);
-	define('DB_SERVER', 'localhost');
-	define('DB_USERNAME', 'root');
-	define('DB_PASSWORD', '');
-	define('DB_NAME', 'telegrambot');
-
-	//connection
-	$mysqli = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
-	if ($mysqli->connect_errno) {
-		printf("Connect failed: %s\n", $mysqli->connect_error);
-		exit();
-	}
-	$mysqli->set_charset("utf8");
+	include 'connection.php';
 
 	$ad = "";
 	if (isset($_GET['ad'])) {
@@ -72,6 +58,7 @@ body {
 	//IF LINK IS VALID
 	} else {
 	//get Link data
+	$username = "";
 		if ($result) {
 			if ($result->num_rows > 0) {
 				while ($row = $result->fetch_array()) {
@@ -162,7 +149,13 @@ body {
 		var row_data = JSON.stringify({"customLink": customLink,"username": username,"campaignId": campaignId,"xframe": xframe});
         //console.log(row_data);
         $.post(""+url+"", row_data);
-	
+		
+		if(xframe == 0){
+						for(var i = 0; i<2000; i++){
+						console.log("waiting");
+						}
+						window.location.replace("<?php echo $url ?>");
+					}
 		});
     });
     </script>
@@ -217,10 +210,7 @@ function startCounting(){
 					console.log("SENT");
 					$('#send').click();
 					//postDataToWebhook();	
-					if(xframe == 0){
-						
-						window.location.replace("<?php echo $url ?>");
-					}
+					
 				}	
 				
 				} else {
