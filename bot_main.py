@@ -340,7 +340,10 @@ def visitSitesMenu(message):
         print("added new valid link")
                                   #also delete all if skip
         mycursor = connector.cursor() #delete after the user visits the ad, use the unique value in the link to see the DB to see what user has to pay who
-        mycursor.execute("INSERT INTO link VALUES ( \'" + customLink + "\',\'" + userWants + "\',\'" + userGot + "\' )")
+        
+        functionQuery = """INSERT INTO link VALUES (%s,%s,%s)"""
+        functionQueryData = (customLink, userWants, userGot)
+        mycursor.execute(functionQuery,functionQueryData)
         connector.commit()
 
         markup.add(telebot.types.InlineKeyboardButton(
@@ -357,7 +360,7 @@ def visitSitesMenu(message):
         mycursor.execute("SELECT * FROM adcampaign WHERE campaignId = \'"+str(lastAd[0][0])+"\'")
         ad = mycursor.fetchall()
         ad = ad[0]
-        print("LAST AD = "+str(ad))
+        #print("LAST AD = "+str(ad))
 
         mycursor = connector.cursor()
         mycursor.execute("SELECT customLink FROM link WHERE username = \'"+userWants+"\'")
@@ -693,7 +696,7 @@ def adsMenu(message):
         nrAds = checkUserAds(message.chat.username)
         adsString = ""
         print("USER ADS SENT")
-        print("ads="+str(ads))
+        #print("ads="+str(ads))
         for i in range(int(nrAds)):
                 adsString = "*Campaign#"+ str(i+1) +"* \n\nTitle: *"+str(ads[i][1])+"*\nDescription: "+str(ads[i][2])+\
                 "\nURL: "+str(ads[i][8])+"\nStatus: "
@@ -965,18 +968,23 @@ def addDailyBudget(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc
              newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc,speed)
 
 def insertAd(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc,speed,dailybudget):
-    mycursor = connector.cursor()
+    mycursor = connector.cursor(prepared=True)
     #print('Message = '+str(message))
     print('url = '+str(url))
     print('adtitle = '+str(adtitle))
+    str(adtitle).replace("\'"," ")
     print('description = '+str(description))
+    str(description).replace("\'"," ")
     print('nsfw = '+str(nsfw))
     print('geotargeting = '+str(geotargeting))
     print('cpc = '+str(cpc))
     print('dailybudget = '+str(dailybudget))
     print('seconds = '+str(seconds))
     print('speed = '+str(speed))
-    mycursor.execute("INSERT INTO adcampaign(username,url,title,description,nsfw,country,cpc,dailybudget,status,clicks,totalclicks,seconds,dateAdded,speed) VALUES('"+str(message.chat.username)+"','"+str(url)+"','"+str(adtitle)+"','"+str(description)+"','"+str(nsfw)+"','"+str(geotargeting)+"','"+str(cpc)+"','"+str(dailybudget)+"','"+str(1)+"','"+str(0)+"','"+str(0)+"','"+str(seconds)+"','"+str(date.today().year)+"/"+str(date.today().month)+"/"+str(date.today().day)+"','"+str(speed)+"')")
+    
+    functionQuery = """INSERT INTO adcampaign(username,url,title,description,nsfw,country,cpc,dailybudget,status,clicks,totalclicks,seconds,dateAdded,speed) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+    functionQueryData = (str(message.chat.username), str(url), str(adtitle), str(description), str(nsfw), str(geotargeting), str(cpc), str(dailybudget), str(1), str(0), str(0), str(seconds), str(date.today().year)+"/"+str(date.today().month)+"/"+str(date.today().day), str(speed))
+    mycursor.execute(functionQuery,functionQueryData)
     connector.commit()
     showInsertedAd(message)
 
@@ -1435,7 +1443,11 @@ def editAdDescriptionInput(message,userAd):
         title = bot.send_message(message.chat.id, "Your edit has been cancelled.", parse_mode='Markdown',reply_markup=keyboard)  
     elif(len(str(message.text))>=10 and len(str(message.text))<=180):
         mycursor = connector.cursor()
-        mycursor.execute("UPDATE adcampaign SET description = \'"+ str(message.text)+"\' WHERE campaignId = \'" + str(userAd)+"\'")
+
+        functionQuery = """UPDATE adcampaign SET description = %s WHERE campaignId = %s"""
+        functionQueryData = (str(message.text), str(userAd))
+
+        mycursor.execute(functionQuery, functionQueryData )
         connector.commit()
         keyboard.row('➕ New ad', '📊 My ads')
         keyboard.add('🏠 Menu')
@@ -1462,7 +1474,11 @@ def editAdTitleInput(message, userAd):
         title = bot.send_message(message.chat.id, "Your edit has been cancelled.", parse_mode='Markdown',reply_markup=keyboard)  
     elif(len(str(message.text))>=5 and len(str(message.text))<=80):
         mycursor = connector.cursor()
-        mycursor.execute("UPDATE adcampaign SET title = \'"+ str(message.text)+"\' WHERE campaignId = \'" + str(userAd)+"\'")
+
+        functionQuery = """UPDATE adcampaign SET title = %s WHERE campaignId = %s"""
+        functionQueryData = (str(message.text), str(userAd))
+
+        mycursor.execute(functionQuery, functionQueryData)
         connector.commit()
         keyboard.row('➕ New ad', '📊 My ads')
         keyboard.add('🏠 Menu')     
@@ -1658,7 +1674,7 @@ def insertUser(chatId,userAddress,country,username):
 
     mycursor = connector.cursor()
 
-    sql = "INSERT INTO user (userId, referral, address, taskAlert, seeNsfw, country, username, dateJoined) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+    sql = """INSERT INTO user (userId, referral, address, taskAlert, seeNsfw, country, username, dateJoined) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
     val = (chatId, chatId, userAddress, 1, 1, country, username, str(date.today().year)+"/"+str(date.today().month)+"/"+str(date.today().day))
     mycursor.execute(sql, val)
     connector.commit()
