@@ -21,13 +21,13 @@ from linkpreview import link_preview
 # WEBSITE
 websiteUrl = "https://www.i0nut.com/earndogetoday/visit.php?ad="
 
-# DB CONNECTOR SINGLETON
-connector = dbConnector.connect()
-
 # BLOCK.IO
+connector = dbConnector.connect()
 mycursor = connector.cursor()
 mycursor.execute("SELECT blockIoApi,blockIoSecretPin,blockIoVersion,botToken,referralTake FROM settings")
 botSettings = mycursor.fetchall()
+mycursor.close()
+connector.close()
 print(str("BOT SETTINGS = "+ str(botSettings)))
 blockIoApi = botSettings[0][0]
 blockIoSecretPin = botSettings[0][1]
@@ -95,9 +95,12 @@ def keepAlive():
         while True:
             time.sleep(60)
             print("keep alive")
+            connector = dbConnector.connect()
             mycursor = connector.cursor()
             mycursor.execute("SELECT * FROM user WHERE username = 'IonutZuZu'")
-            keepAliveUser = mycursor.fetchall()
+            keepAliveUser = mycursor.fetchall()      
+            mycursor.close()
+            connector.close()
             print("keep alive User = "+keepAliveUser[0][0])
             
             keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -134,17 +137,24 @@ def start_message(message):
         if (referralRecieved == "" or referralRecieved == "/start"): 
             print("no referral inserted")
         else:
+            connector = dbConnector.connect()
             mycursor = connector.cursor()
             mycursor.execute("SELECT username FROM user WHERE referral = \'"+str(referralRecieved)+"\'")
             userReferred = mycursor.fetchall()
+            mycursor.close()
+            connector.close()
             print("USER REFERRED = "+userReferred[0][0])
             if( userReferred[0][0] == ""):
                 print("invalid referral")
             else:
                 print("VALID referral")
                 print("username = "+str(message.chat.username))
+                connector = dbConnector.connect()
+                mycursor = connector.cursor()
                 mycursor.execute("UPDATE user SET referredBy = \'" + str(userReferred[0][0]) + "\'  WHERE username = \'" + str(message.chat.username) + "\'")
                 connector.commit()
+                mycursor.close()
+                connector.close()
 
     else:
         print("user not inserted")
@@ -311,15 +321,21 @@ def visitSitesMenu(message):
     print("USER THAT WANTS AN AD = "+str(message.chat.username))
     userWants = str(message.chat.username)
 
+    connector = dbConnector.connect()
     mycursor = connector.cursor()
     mycursor.execute("SELECT lastAd FROM user WHERE username = \'"+userWants+"\'")
     lastAd = mycursor.fetchall()
+    mycursor.close()
+    connector.close()
     print("LAST AD = "+str(lastAd[0][0])) #todo if last ad gets deleted and user tries to see last ad, breaks
 
     if(str(lastAd[0][0]) == "-1"): #if there is no last ad give the user a new one
+        connector = dbConnector.connect()
         mycursor = connector.cursor() #expire previous links
         mycursor.execute("DELETE FROM link WHERE username = \'" + userWants + "\'")
         connector.commit()
+        mycursor.close()
+        connector.close()
         print("expired previous links")
 
         ad = getRandomAd(message)
@@ -329,22 +345,27 @@ def visitSitesMenu(message):
         print("USER RECIEVED AD = "+str(ad[0]))
         userGot = str(ad[0])
 
+        connector = dbConnector.connect()
         mycursor = connector.cursor()
         mycursor.execute('UPDATE user SET lastAd = \"' + userGot + '\"  WHERE username = \'' + userWants + '\'')
         connector.commit()
+        mycursor.close()
+        connector.close()
 
         m = hashlib.md5()
         m.update(userWants.encode('utf-8') + userGot.encode('utf-8'))
         customLink = str(int(m.hexdigest(), 16))[0:12]
         print("CUSTOM LINK = "+customLink)
         print("added new valid link")
-                                  #also delete all if skip
+        connector = dbConnector.connect()  #also delete all if skip
         mycursor = connector.cursor() #delete after the user visits the ad, use the unique value in the link to see the DB to see what user has to pay who
         
         functionQuery = """INSERT INTO link VALUES (%s,%s,%s)"""
         functionQueryData = (customLink, userWants, userGot)
         mycursor.execute(functionQuery,functionQueryData)
         connector.commit()
+        mycursor.close()
+        connector.close()
 
         markup.add(telebot.types.InlineKeyboardButton(
             text='🔎 Go to website', url=str(websiteUrl + customLink), callback_data="goToWebsite"))
@@ -356,15 +377,21 @@ def visitSitesMenu(message):
 
     else: #if there is a last ad show that one
         print("last ad exists")
+        connector = dbConnector.connect()
         mycursor = connector.cursor()
         mycursor.execute("SELECT * FROM adcampaign WHERE campaignId = \'"+str(lastAd[0][0])+"\'")
         ad = mycursor.fetchall()
+        mycursor.close()
+        connector.close()
         ad = ad[0]
         #print("LAST AD = "+str(ad))
 
+        connector = dbConnector.connect()
         mycursor = connector.cursor()
         mycursor.execute("SELECT customLink FROM link WHERE username = \'"+userWants+"\'")
         customLink = mycursor.fetchall()
+        mycursor.close()
+        connector.close()
         print("LAST CUSTOM LINK = "+str(customLink[0][0]))
         customLink = str(customLink[0][0])
        
@@ -399,9 +426,12 @@ def getRandomAdOld(message):
         else:
             getRandomAd(message)
 
+        connector = dbConnector.connect()
         mycursor = connector.cursor()
         mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'fastest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\'and status=\'1\' ")
         ad = mycursor.fetchall()
+        mycursor.close()
+        connector.close()
 
         if(str(ad) == "[]"):
             getRandomAd(message)
@@ -439,9 +469,12 @@ def getRandomAdOld(message):
         else:
             getRandomAd(message)
 
+        connector = dbConnector.connect()
         mycursor = connector.cursor()
         mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'faster\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' and status=\'1\'")
         ad = mycursor.fetchall()
+        mycursor.close()
+        connector.close()
 
         if(str(ad) == "[]"):
             getRandomAd(message)
@@ -478,9 +511,12 @@ def getRandomAdOld(message):
             seconds = 60
             getRandomAd(message)
 
+        connector = dbConnector.connect()
         mycursor = connector.cursor()
         mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'slowest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' and status=\'1\' ")
         ad = mycursor.fetchall()
+        mycursor.close()
+        connector.close()
 
         if(str(ad) == "[]"):
             getRandomAd(message)
@@ -525,15 +561,23 @@ def getRandomAd(message):
                 seconds = 50
             elif(randomSeconds >= 95 and randomSeconds <= 99):  # fastest paying and <= 60 s
                 seconds = 60
-
-            mycursor = connector.cursor()
+            
             if(seconds == 10):
+                connector = dbConnector.connect()
+                mycursor = connector.cursor()
                 mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'fastest\' and seconds >= -1 and seconds <= \'"+str(seconds)+"\'and status=\'1\' ")
                 ad = mycursor.fetchall()
-            else: 
+                mycursor.close()
+                connector.close()
+
+            else:
+                connector = dbConnector.connect()
+                mycursor = connector.cursor() 
                 mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'fastest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\'and status=\'1\' ")
                 ad = mycursor.fetchall()
-                
+                mycursor.close()
+                connector.close()
+
             if(str(ad) == "[]"):
                 selectedAd = ""
             else:
@@ -565,15 +609,20 @@ def getRandomAd(message):
                 seconds = 50
             elif(randomSeconds >= 95 and randomSeconds <= 99):  # faster paying and <= 60 s
                 seconds = 60
-
-            mycursor = connector.cursor()
             if(seconds == 10):
+                connector = dbConnector.connect()
+                mycursor = connector.cursor()
                 mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'faster\' and seconds >= -1 and seconds <= \'"+str(seconds)+"\' and status=\'1\'")
                 ad = mycursor.fetchall()
+                mycursor.close()
+                connector.close()
             else:
+                connector = dbConnector.connect()
+                mycursor = connector.cursor()
                 mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'faster\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' and status=\'1\'")
                 ad = mycursor.fetchall()
-               
+                mycursor.close()
+                connector.close()
             if(str(ad) == "[]"):
                 selectedAd = ""
             else:
@@ -605,13 +654,21 @@ def getRandomAd(message):
             elif(randomSeconds >= 95 and randomSeconds <= 99):  # slowest paying and <= 60 s
                 seconds = 60
 
-            mycursor = connector.cursor()
+           
             if(seconds == 10):
+                connector = dbConnector.connect()
+                mycursor = connector.cursor()
                 mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'slowest\' and seconds >= -1 and seconds <= \'"+str(seconds)+"\' and status=\'1\' ")
                 ad = mycursor.fetchall()
+                mycursor.close()
+                connector.close()
             else:
+                connector = dbConnector.connect()
+                mycursor = connector.cursor()
                 mycursor.execute("SELECT * FROM adcampaign WHERE speed = \'slowest\' and seconds > \'"+str(seconds-10)+"\' and seconds <= \'"+str(seconds)+"\' and status=\'1\' ")
                 ad = mycursor.fetchall()
+                mycursor.close()
+                connector.close()
                 
             if(str(ad) == "[]"):
                 selectedAd = ""        
@@ -646,11 +703,12 @@ def createReferralCode(message):
     #m = hashlib.md5()
     #m.update(str(message.chat.username).encode('utf-8'))
     #result_str = str(int(m.hexdigest(), 16))[0:8] #todo test thi
-
+    connector = dbConnector.connect()
     mycursor = connector.cursor()
     mycursor.execute('UPDATE user SET referral = \"' + result_str + '\"  WHERE username = \'' + str(message.chat.username) + '\'')
     connector.commit()
-
+    mycursor.close()
+    connector.close()
 
 def referralMenu(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -658,11 +716,19 @@ def referralMenu(message):
     keyboard.add('🙌🏻 Referrals', '⚙ Settings')
     keyboard.add('📊 My ads')
 
+    connector = dbConnector.connect()
     mycursor = connector.cursor()
     mycursor.execute("SELECT COUNT(referredBy) FROM user WHERE referredBy = '"+ str(message.chat.username) +"'")
     referredUsers = mycursor.fetchall()[0][0]
+    mycursor.close()
+    connector.close()
+
+    connector = dbConnector.connect()
+    mycursor = connector.cursor()
     mycursor.execute("SELECT referralEarning FROM user WHERE username = '"+ str(message.chat.username) +"'")
     referralEarnings = mycursor.fetchall()[0][0]
+    mycursor.close()
+    connector.close()
 
     bot.send_message(message.chat.id,
                     'You have *'+str(referredUsers)+'* referrals, and earned *'+str(referralEarnings)+'* DOGE. \nTo refer people, send them to: \n\n'+getReferralCode(message.chat.username)+' \n\nYou will earn *' +str(settingsOwnerTake)+ '%* of each user\'s earnings from tasks, and *1%* of DOGE they spend on ads.',
@@ -968,7 +1034,7 @@ def addDailyBudget(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc
              newDailyBudgetMenu(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc,speed)
 
 def insertAd(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc,speed,dailybudget):
-    mycursor = connector.cursor(prepared=True)
+    #mycursor = connector.cursor(prepared=True)
     #print('Message = '+str(message))
     print('url = '+str(url))
     print('adtitle = '+str(adtitle))
@@ -984,8 +1050,13 @@ def insertAd(message,url,adtitle,description,nsfw,geotargeting,seconds,cpc,speed
     
     functionQuery = """INSERT INTO adcampaign(username,url,title,description,nsfw,country,cpc,dailybudget,status,clicks,totalclicks,seconds,dateAdded,speed) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
     functionQueryData = (str(message.chat.username), str(url), str(adtitle), str(description), str(nsfw), str(geotargeting), str(cpc), str(dailybudget), str(1), str(0), str(0), str(seconds), str(date.today().year)+"/"+str(date.today().month)+"/"+str(date.today().day), str(speed))
+    
+    connector = dbConnector.connect()
+    mycursor = connector.cursor()
     mycursor.execute(functionQuery,functionQueryData)
     connector.commit()
+    mycursor.close()
+    connector.close()
     showInsertedAd(message)
 
 
@@ -996,17 +1067,26 @@ def showInsertedAd(message):
     keyboard.row('➕ New ad', '📊 My ads')
     keyboard.add('🏠 Menu')
 
+    connector = dbConnector.connect()
     mycursor = connector.cursor()
     mycursor.execute("SELECT MAX(campaignId) FROM adcampaign WHERE username = '"+str(message.chat.username)+"'")
     maxid = mycursor.fetchall()
+    mycursor.close()
+    connector.close()
 
+    connector = dbConnector.connect()
     mycursor = connector.cursor()
     mycursor.execute("SELECT COUNT(campaignId) FROM adcampaign WHERE username = '"+ str(message.chat.username) +"' GROUP BY username")
     countads = mycursor.fetchall()
+    mycursor.close()
+    connector.close()
 
+    connector = dbConnector.connect()
     mycursor = connector.cursor()
     mycursor.execute("SELECT title, description, url, status, cpc, dailyBudget, totalclicks, clicks  FROM adcampaign WHERE campaignId = '"+str(maxid[0][0])+"'")
     ads = mycursor.fetchall()
+    mycursor.close()
+    connector.close()
 
     print(str(ads))
     print("showads = "+str(ads))
@@ -1187,35 +1267,54 @@ def query_handler(call):
         if call.data == 'disableNSFW':
             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id) 
             bot.send_message(call.message.chat.id, "NSFW Advertisments have been ❌ *Disabled*!",parse_mode='Markdown',reply_markup=keyboard)
+            
+            connector = dbConnector.connect()
             mycursor = connector.cursor()
             mycursor.execute("UPDATE user SET seeNsfw = 0 WHERE username = \'" + str(call.message.chat.username)+'\'')
             connector.commit()
+            mycursor.close()
+            connector.close()
         elif call.data == 'enableNSFW':
             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
             bot.send_message(call.message.chat.id, "NSFW Advertisments have been ✅ *Enabled*!",parse_mode='Markdown',reply_markup=keyboard)
+            
+            connector = dbConnector.connect()
             mycursor = connector.cursor()
             mycursor.execute("UPDATE user SET seeNsfw = 1 WHERE username = \'" + str(call.message.chat.username)+'\'')
             connector.commit()
+            mycursor.close()
+            connector.close()
         elif call.data == 'skipAd':
             #bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
             bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)  #deletes reply markup keyboard
             bot.send_message(call.message.chat.id, "Skipping Task...",parse_mode='Markdown',reply_markup=keyboard)           
+            
+            connector = dbConnector.connect()
             mycursor = connector.cursor()
             mycursor.execute("UPDATE user SET lastAd = -1 WHERE username = \'" + str(call.message.chat.username)+'\'')
             connector.commit()
+            mycursor.close()
+            connector.close()
             visitSitesMenu(call.message)
             print("AD SKIPPED")
         elif call.data == 'reportAd':
             #todo nrOfTimesReported in db for each ad an then you can see the most reported. If the customer support says its allowed set the nr to 0, if not remove the ad.
             #BASED ON THE CUSTOM URL which redirects the user to earndogetoday.com/visit/customurl which is created with the adid+url+userid, which is passed in the "call" object
             print(call)
+            connector = dbConnector.connect()
             mycursor = connector.cursor()
             mycursor.execute("SELECT campaignId FROM link WHERE username = \'" + str(call.message.chat.username) +"\'")
             reportedAd = mycursor.fetchall()
+            mycursor.close()
+            connector.close()
             reportedAd = reportedAd[0][0]
+            connector = dbConnector.connect()
+            mycursor = connector.cursor()
             print("reported Ad = "+str(reportedAd[0][0]))
             mycursor.execute("UPDATE adcampaign SET reports = reports+1 WHERE campaignId = \'" + str(reportedAd)+"\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
 
             print("AD REPORTED")
         elif call.data == 'goToWebsite':
@@ -1228,12 +1327,19 @@ def query_handler(call):
             userAd = getUserAds(call.message.chat.username)[int(str(call.message.text).split("#")[1].split(" ")[0])-1][0]
             print("USER AD = "+str(userAd))
 
+            connector = dbConnector.connect()
             mycursor = connector.cursor()
             mycursor.execute("UPDATE adcampaign SET status = 0 WHERE campaignId = \'" + str(userAd)+'\'')
             connector.commit()
+            mycursor.close()
+            connector.close()
+
+            connector = dbConnector.connect()
             mycursor = connector.cursor()
             mycursor.execute("UPDATE user SET lastAd = -1 WHERE lastAd = \'" + str(userAd)+'\'')
             connector.commit()
+            mycursor.close()
+            connector.close()
 
             newMessage = str(call.message.text).replace('Enabled ✅','Disabled 🚫')
             newMessage = newMessage.replace('Campaign#','*Campaign#')
@@ -1261,16 +1367,23 @@ def query_handler(call):
             userAd = getUserAds(call.message.chat.username)[int(str(call.message.text).split("#")[1].split(" ")[0])-1][0]
             print("USER AD = "+str(userAd))
         
+            connector = dbConnector.connect()
             mycursor = connector.cursor()
             mycursor.execute("SELECT cpc FROM adcampaign WHERE username = \'" + str(call.message.chat.username) +"\'")
             disabledAdCpc = mycursor.fetchall()[0][0]
+            mycursor.close()
+            connector.close()
+
             print("disabledAdCpc = "+str(disabledAdCpc))
             if(float(disabledAdCpc) > float(getUserBalance(str(call.message.chat.username)))): #if not enough founds
                 pass
             else:
+                connector = dbConnector.connect()
                 mycursor = connector.cursor()
                 mycursor.execute("UPDATE adcampaign SET status = 1 WHERE campaignId = \'" + str(userAd)+'\'')
                 connector.commit()
+                mycursor.close()
+                connector.close()
 
                 newMessage = str(call.message.text).replace('Disabled 🚫','Enabled ✅')
                 newMessage = newMessage.replace('Campaign#','*Campaign#')
@@ -1421,11 +1534,20 @@ def query_handler(call):
 def editAdDelete(message, userAd):
     print("deleted campaign id = "+str(userAd))
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
+    
+    connector = dbConnector.connect()
     mycursor = connector.cursor()
     mycursor.execute("DELETE FROM adcampaign WHERE campaignId = \'" + str(userAd)+"\'")
     connector.commit()
+    mycursor.close()
+    connector.close()
+
+    connector = dbConnector.connect()
+    mycursor = connector.cursor()
     mycursor.execute('UPDATE user SET lastAd = \'-1\'  WHERE lastAd = \'' + str(userAd) + '\'')
     connector.commit()   
+    mycursor.close()
+    connector.close()
 
 def editAdDescriptionMenu(message, userAd):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -1447,8 +1569,12 @@ def editAdDescriptionInput(message,userAd):
         functionQuery = """UPDATE adcampaign SET description = %s WHERE campaignId = %s"""
         functionQueryData = (str(message.text), str(userAd))
 
+        connector = dbConnector.connect()
+        mycursor = connector.cursor()
         mycursor.execute(functionQuery, functionQueryData )
         connector.commit()
+        mycursor.close()
+        connector.close()
         keyboard.row('➕ New ad', '📊 My ads')
         keyboard.add('🏠 Menu')
         #print("MESSAGE " + str(message))
@@ -1478,8 +1604,12 @@ def editAdTitleInput(message, userAd):
         functionQuery = """UPDATE adcampaign SET title = %s WHERE campaignId = %s"""
         functionQueryData = (str(message.text), str(userAd))
 
+        connector = dbConnector.connect()
+        mycursor = connector.cursor()
         mycursor.execute(functionQuery, functionQueryData)
         connector.commit()
+        mycursor.close()
+        connector.close()
         keyboard.row('➕ New ad', '📊 My ads')
         keyboard.add('🏠 Menu')     
         title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)
@@ -1505,9 +1635,12 @@ def editAdUrlInput(message,userAd):
             if requests.get(str(message.text)).status_code == 200:
                 valid = validators.url(str(message.text))
                 if(valid == True):
+                    connector = dbConnector.connect()
                     mycursor = connector.cursor()
                     mycursor.execute("UPDATE adcampaign SET url = \'"+ str(message.text)+"\' WHERE campaignId = \'" + str(userAd)+"\'")
                     connector.commit()
+                    mycursor.close()
+                    connector.close()
                     keyboard.row('➕ New ad', '📊 My ads')
                     keyboard.add('🏠 Menu')
                     title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)
@@ -1542,9 +1675,12 @@ def editAdGeotagetingInput(message, userAd):
     elif(message.text == '✅ Yes'):
         newAdGeotargetingInputInput(message, userAd)
     elif(message.text == '🚫 No'):
+        connector = dbConnector.connect()
         mycursor = connector.cursor()
         mycursor.execute("UPDATE adcampaign SET country = \'xx\' WHERE campaignId = \'" + str(userAd)+"\'")
         connector.commit()
+        mycursor.close()
+        connector.close()
         keyboard.row('➕ New ad', '📊 My ads')
         keyboard.add('🏠 Menu')     
         title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)
@@ -1579,9 +1715,12 @@ def newAdGeotargetingInputInputAccept(message, userAd):
         if(usercountries == ""):
             newAdGeotargetingInputInput(message, userAd)
         else:
+            connector = dbConnector.connect()
             mycursor = connector.cursor()
             mycursor.execute("UPDATE adcampaign SET country = \'" + usercountries + "\' WHERE campaignId = \'" + str(userAd)+"\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
             keyboard.row('➕ New ad', '📊 My ads')
             keyboard.add('🏠 Menu')     
             title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)
@@ -1604,31 +1743,52 @@ def editAdCpcInput(message, userAd):
             title = bot.send_message(message.chat.id, "Your edit has been cancelled.", parse_mode='Markdown',reply_markup=keyboard)      
         elif(float(str(message.text)[0:6]) >= float(str(slowest)[0:6]) and float(str(message.text)[0:6]) < float(str(faster)[0:6])):
             speed = "slowest"
+            connector = dbConnector.connect()
             mycursor = connector.cursor()
             mycursor.execute("UPDATE adcampaign SET cpc = \'" + str(message.text)[0:6] + "\' WHERE campaignId = \'" + str(userAd)+"\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
+            connector = dbConnector.connect()
+            mycursor = connector.cursor()
             mycursor.execute("UPDATE adcampaign SET speed = \'" + speed + "\' WHERE campaignId = \'" + str(userAd)+"\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
             keyboard.row('➕ New ad', '📊 My ads')
             keyboard.add('🏠 Menu')     
             title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)
         elif(float(str(message.text)[0:6]) >= float(str(faster)[0:6]) and float(str(message.text)[0:6]) < float(str(fastest)[0:6])):
             speed = "faster"
+            connector = dbConnector.connect()
             mycursor = connector.cursor()
             mycursor.execute("UPDATE adcampaign SET cpc = \'" + str(message.text)[0:6] + "\' WHERE campaignId = \'" + str(userAd)+"\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
+            connector = dbConnector.connect()
+            mycursor = connector.cursor()
             mycursor.execute("UPDATE adcampaign SET speed = \'" + speed + "\' WHERE campaignId = \'" + str(userAd)+"\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
             keyboard.row('➕ New ad', '📊 My ads')
             keyboard.add('🏠 Menu')     
             title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)
         elif(float(str(message.text)[0:6]) >= float(str(fastest)[0:6]) and float(str(message.text)[0:6]) <= float(str(maxamount)[0:6])):
             speed = "fastest"
+            connector = dbConnector.connect()
             mycursor = connector.cursor()
             mycursor.execute("UPDATE adcampaign SET cpc = \'" + str(message.text)[0:6] + "\' WHERE campaignId = \'" + str(userAd)+"\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
+            connector = dbConnector.connect()
+            mycursor = connector.cursor()
             mycursor.execute("UPDATE adcampaign SET speed = \'" + speed + "\' WHERE campaignId = \'" + str(userAd)+"\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
             keyboard.row('➕ New ad', '📊 My ads')
             keyboard.add('🏠 Menu')     
             title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)    
@@ -1657,9 +1817,12 @@ def editAdBudgetMenuInput(message,userAd):
             title = bot.send_message(message.chat.id, "Your edit has been cancelled.", parse_mode='Markdown',reply_markup=keyboard)  
         elif(float(str(message.text).split(' ')[0]) >= float(cents10) and float(str(message.text).split(' ')[0]) <= float(cents500000)):
             print("fatto "+ str(message.text).split(' ')[0])
+            connector = dbConnector.connect()
             mycursor = connector.cursor()
             mycursor.execute("UPDATE adcampaign SET dailyBudget = \'"+ str(message.text).split(' ')[0]+"\' WHERE campaignId = \'" + str(userAd)+"\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
             keyboard.row('➕ New ad', '📊 My ads')
             keyboard.add('🏠 Menu')
             title = bot.send_message(message.chat.id, "Your ad has been updated.", parse_mode='Markdown',reply_markup=keyboard)        
@@ -1672,19 +1835,24 @@ def editAdBudgetMenuInput(message,userAd):
 #inserts new user in the DB
 def insertUser(chatId,userAddress,country,username):
 
-    mycursor = connector.cursor()
-
     sql = """INSERT INTO user (userId, referral, address, taskAlert, seeNsfw, country, username, dateJoined) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
     val = (chatId, chatId, userAddress, 1, 1, country, username, str(date.today().year)+"/"+str(date.today().month)+"/"+str(date.today().day))
+    connector = dbConnector.connect()
+    mycursor = connector.cursor()
     mycursor.execute(sql, val)
     connector.commit()
+    mycursor.close()
+    connector.close()
     print(mycursor.rowcount, " record inserted.")
 
 #check if user is already inserted in the DB
 def checkUserId(username):
+    connector = dbConnector.connect()
     mycursor = connector.cursor()
     mycursor.execute("SELECT * FROM user WHERE username = \'" + str(username)+"\'")
     myresult = mycursor.fetchall()
+    mycursor.close()
+    connector.close()
 
     if  myresult:
         print("user exists")
@@ -1694,10 +1862,12 @@ def checkUserId(username):
         return 1
 
 def checkUserAddress(username):
+    connector = dbConnector.connect()
     mycursor = connector.cursor()
     mycursor.execute("SELECT address FROM user WHERE username = \'" + str(username)+"\'")
     myresult = mycursor.fetchall()
-
+    mycursor.close()
+    connector.close()
     if myresult:
         return myresult[0][0]
     else:
@@ -1705,10 +1875,13 @@ def checkUserAddress(username):
 
 #returns the number of ads of a user
 def checkUserAds(username):
+        connector = dbConnector.connect()
         mycursor = connector.cursor()
         mycursor.execute("SELECT COUNT(username) FROM adcampaign WHERE username = \'" + str(username)+"\' GROUP BY username")
 
         myresult = mycursor.fetchall()
+        mycursor.close()
+        connector.close()
 
         if myresult:
             return myresult[0][0]
@@ -1717,21 +1890,26 @@ def checkUserAds(username):
 
 def getReferralCode(username):
 
+        connector = dbConnector.connect()
         mycursor = connector.cursor()
         mycursor.execute('SELECT referral FROM user WHERE username = \'' + str(username)+'\'')
         myresult = mycursor.fetchall()
-
+        mycursor.close()
+        connector.close()
         if myresult:
             fullReferral = "https://t.me/EarnDogeTodayBot?start="+str(myresult[0][0])
             return fullReferral
         else:
             return 0
 
-def getUserBalance(username):   
-    mycursor = connector.cursor()
+def getUserBalance(username):
+    connector = dbConnector.connect()
+    mycursor = connector.cursor()   
     mycursor.execute("SELECT virtualBalance FROM user WHERE username = \'"+ username +"\'")  
-    balance = mycursor.fetchall()[0][0]  
+    balance = mycursor.fetchall()[0][0] 
     connector.commit() #updates balance after being changed by the server, if not included it keeps the last value
+    mycursor.close()
+    connector.close() 
     print(balance)
     return str(float(balance))
 
@@ -1746,9 +1924,12 @@ def getUserHistory(username):
     return history
 
 def getNsfw(username):
+    connector = dbConnector.connect()
     mycursor = connector.cursor()
     mycursor.execute("SELECT seeNsfw FROM user WHERE username = \'" + str(username)+'\'')
     myresult = mycursor.fetchall()
+    mycursor.close()
+    connector.close()
 
     if myresult:
         return myresult[0][0]
@@ -1757,10 +1938,13 @@ def getNsfw(username):
 
 #returns all data of all ads of a user
 def getUserAds(username):
+        connector = dbConnector.connect()
         mycursor = connector.cursor()
         mycursor.execute("SELECT * FROM adcampaign WHERE username = \'" + str(username)+'\'')
 
         myresult = mycursor.fetchall()
+        mycursor.close()
+        connector.close()
         return myresult
 
 # waitForUserInteraction

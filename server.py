@@ -17,9 +17,12 @@ def connect():
 connector = connect()
 
 #//////////////// SETTINGS
+connector = connect()
 mycursor = connector.cursor()
 mycursor.execute("SELECT blockIoApi,blockIoSecretPin,blockIoVersion,mainAccount,botToken FROM settings")
 botSettings = mycursor.fetchall()
+mycursor.close()
+connector.close()
 print("BOT SETTINGS = "+str(botSettings))
 blockIoApi = botSettings[0][0]
 blockIoSecretPin = botSettings[0][1]
@@ -69,26 +72,27 @@ def website():
         try:
             #get webhook data
             print("WEBSITE WEBHOOK")
-          
-            dati = request.values
-            print(str(dati))
- 
-              
-            websiteXframe = dati["xframe"]
+
+            dati = str(request.form)
+            print(dati)
+
+            websiteXframe = dati.split("\"")[15]
             print("websiteXframe = "+websiteXframe)
-            websiteCustomLink = dati["customLink"]
+            websiteCustomLink = dati.split("\"")[3]
             print("websiteCustomLink = "+websiteCustomLink)
-            websiteUsername = dati["username"]
+            websiteUsername = dati.split("\"")[7]
             print("websiteUsername = "+websiteUsername)
-            websiteCampaignId = dati["campaignId"]
+            websiteCampaignId = dati.split("\"")[11]
             print("websiteCampaignId = "+websiteCampaignId)
 
             #webhook query
+            connector = connect()
             mycursor = connector.cursor()
-
             #get ownerTake
             mycursor.execute("SELECT ownerTake,referralTake FROM settings")
             getResults = mycursor.fetchall()
+            mycursor.close()
+            connector.close()
             ownerTake = getResults[0][0]
             referralTake = getResults[0][1]
             print("OWNER TAKE % = "+str(ownerTake))
@@ -100,13 +104,21 @@ def website():
             #connector.commit()
 
             #get the campaign cpc,dailyBudget,dailyBudgetSpent,username 
+            connector = connect()
+            mycursor = connector.cursor()
             mycursor.execute("SELECT cpc,dailyBudget,dailyBudgetSpent,username FROM adcampaign WHERE campaignId = \'"+ websiteCampaignId +"\'")
             websiteAd = mycursor.fetchall()
+            mycursor.close()
+            connector.close()
             print("WEBSITE AD = "+str(websiteAd))
 
             #if virtual balance <= 0 set ad status to 0 (disabled)
+            connector = connect()
+            mycursor = connector.cursor()
             mycursor.execute("SELECT virtualBalance FROM user WHERE username = \'"+ str(websiteAd[0][3]) +"\'")
             userVirtualBalance = mycursor.fetchall()[0][0]
+            mycursor.close()
+            connector.close()
             print("USER VB = "+str(userVirtualBalance))
             if(userVirtualBalance <= 0):
                 print("DISABLED AD")
@@ -114,27 +126,43 @@ def website():
                 connector.commit()
 
             #remove from virtual balance of the user that posted the ad
+            connector = connect()
+            mycursor = connector.cursor()
             mycursor.execute("UPDATE user SET virtualBalance = virtualBalance - \'"+ str(websiteAd[0][0]) +"\' WHERE username = \'"+ str(websiteAd[0][3]) +"\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
             print("REMOVED VB")
 
             #set last ad -1 to the user that has seen the ad
+            connector = connect()
+            mycursor = connector.cursor()
             mycursor.execute("UPDATE user SET lastAd = -1 WHERE username = \'"+ websiteUsername +"\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
             print("REMOVED LAST AD")
 
             #give the user that has seen the ad money
             userCpc = websiteAd[0][0]-((websiteAd[0][0]*ownerTake)/100)
             userCpcDecimals = "{:.4f}".format(userCpc)
             #give the referral user ad money
+            connector = connect()
+            mycursor = connector.cursor()
             mycursor.execute("SELECT referredBy,userId,country FROM user WHERE username = \'"+ websiteUsername +"\'")
             userResults = mycursor.fetchall()
+            mycursor.close()
+            connector.close()
             referralUsername = userResults[0][0]
             userId = userResults[0][1]
             userCountry = userResults[0][2]
             if(referralUsername == "[]"):
+                connector = connect()
+                mycursor = connector.cursor()
                 mycursor.execute("UPDATE user SET virtualBalance = virtualBalance + \'"+ str(userCpcDecimals) +"\' WHERE username = \'"+ websiteUsername +"\'")
                 connector.commit()
+                mycursor.close()
+                connector.close()
                 earningMinusReferral = userCpcDecimals
                 print("GIVE CPC = "+str(earningMinusReferral))
             else:
@@ -142,30 +170,58 @@ def website():
                 referralCpcDecimals = "{:.4f}".format(referralCpc)
                 earningMinusReferral = float(userCpcDecimals)-float(referralCpcDecimals)
                 earningMinusReferral = "{:.4f}".format(earningMinusReferral)
+                connector = connect()
+                mycursor = connector.cursor()
                 mycursor.execute("UPDATE user SET virtualBalance = virtualBalance + \'"+ str(referralCpcDecimals) +"\' WHERE username = \'"+ referralUsername +"\'")
                 connector.commit()
+                mycursor.close()
+                connector.close()
                 print("GIVE REF.CPC = "+str(referralCpcDecimals))
                 #add to the total referralEarnings
+                connector = connect()
+                mycursor = connector.cursor()
                 mycursor.execute("UPDATE user SET referralEarning = referralEarning + \'"+ str(referralCpcDecimals) +"\' WHERE username = \'"+ referralUsername +"\'")
                 connector.commit()
+                mycursor.close()
+                connector.close()
+                connector = connect()
+                mycursor = connector.cursor()
                 mycursor.execute("UPDATE user SET virtualBalance = virtualBalance + \'"+ str(earningMinusReferral) +"\' WHERE username = \'"+ websiteUsername +"\'")
                 connector.commit()
+                mycursor.close()
+                connector.close()
                 print("GIVE CPC = "+str(earningMinusReferral))
 
             #increase country clicks
+            connector = connect()
+            mycursor = connector.cursor()
             mycursor.execute("UPDATE country SET clicks = clicks + 1 WHERE code =  \'"+ str(userCountry) +"\'")
             connector.commit()
-
+            mycursor.close()
+            connector.close()
             #increase clicks
+            connector = connect()
+            mycursor = connector.cursor()
             mycursor.execute("UPDATE adcampaign SET clicks = clicks + 1 WHERE campaignId =  \'"+ websiteCampaignId +"\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
+
+            connector = connect()
+            mycursor = connector.cursor()
             mycursor.execute("UPDATE adcampaign SET clicksToday = clicksToday + 1 WHERE campaignId =  \'"+ websiteCampaignId +"\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
             print("CLICKED")
 
             #increase dailyBudgetSpent
+            connector = connect()
+            mycursor = connector.cursor()
             mycursor.execute("UPDATE adcampaign SET dailyBudgetSpent = dailyBudgetSpent + \'"+ str(websiteAd[0][0]) +"\' WHERE campaignId = \'"+ websiteCampaignId +"\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
             print("INCREASE DAILY BUDGET")
             print("DONE")
             if(websiteXframe == 1): #send message immedialy if xframe == 1 (so the user already waited on the website)
@@ -199,8 +255,12 @@ def webhook():
                 address = str(request.json["data"]["address"])
                 txid = str(request.json["data"]["txid"])
 
+                connector = connect()
+                mycursor = connector.cursor()
                 mycursor.execute("SELECT transaction FROM transaction WHERE transaction = \'"+ txid +"\'")
                 existingTransaction = mycursor.fetchall()
+                mycursor.close()
+                connector.close()
                 print("existing transaction = " + str(existingTransaction))
                 if(str(existingTransaction) == "[]"): #this is to avoid doing the same thing twice, because the block_io sends the same webhook more than once
                     updateUser(address,balance,mycursor,txid)
@@ -232,23 +292,37 @@ def updateUser(address,balance,mycursor,txid):
         if(float(amountMinusFee) < 2 ): #block io need at least 2 (without fee) doge to send the transaction
             print("!AMOUNT TOO LOW")
         else:
+            connector = connect()
+            mycursor = connector.cursor()
             mycursor.execute("SELECT virtualBalance FROM user WHERE address = \'"+ address +"\'") 
             print("SELECT virtualBalance FROM user WHERE address = \'"+ address +"\'") 
             virtualBalance = mycursor.fetchall()
+            mycursor.close()
+            connector.close()
             print("virtual Balance = "+str(virtualBalance[0][0]))
             totalBalance = float(balance) + float(str(virtualBalance[0][0])) 
             print("Total Balance = "+str(totalBalance))
+            connector = connect()
             mycursor = connector.cursor()
             mycursor.execute("UPDATE user SET virtualBalance = \'"+ str(totalBalance) +"\'  WHERE address = \'" + str(address) + "\'")
             connector.commit()
+            mycursor.close()
+            connector.close()
 
+            connector = connect()
             mycursor = connector.cursor()
             mycursor.execute("SELECT username FROM user WHERE address = \'"+ str(address) +"\' ")
             username = str(mycursor.fetchall()[0][0])
             connector.commit()
+            mycursor.close()
+            connector.close()
+
+            connector = connect()
             mycursor = connector.cursor()
             mycursor.execute("INSERT INTO transaction(transaction,amount,userAddress,userUsername) VALUES ( \'" + str(txid) + "\',\'" + str(balance) + "\',\'" + str(address) + "\',\'" + str(username) + "\')")
             connector.commit()
+            mycursor.close()
+            connector.close()
             print("DB Insert")
             block_io.withdraw_from_addresses(amounts=str(amountMinusFee), from_addresses= address , to_addresses=str(mainAccount), priority='custom', custom_network_fee= str(fee))
             print("SENT!")
