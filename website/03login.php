@@ -93,6 +93,12 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 			color:white;
             /* this is a light blue */
         }
+		
+		.button-purple {
+            background: purple;
+			color:white;
+            /* this is a light blue */
+        }
 
 	</style>
 </head>
@@ -122,6 +128,7 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 <a class="pure-button button-success pure-button-active" href="users.php">USERS</a>&nbsp;&nbsp;&nbsp;
 <a class="pure-button button-error pure-button-active" href="ads.php">ADS</a>&nbsp;&nbsp;&nbsp;
 <a class="pure-button button-warning pure-button-active" href="transactions.php">TRANSACTIONS</a>&nbsp;&nbsp;&nbsp;
+<a class="pure-button button-purple pure-button-active" href="withdraws.php">WITHDRAWS</a>&nbsp;&nbsp;&nbsp;
 <a class="pure-button pure-button-primary pure-button-active" href="settings.php">SETTINGS</a>&nbsp;&nbsp;&nbsp;
 <a class="pure-button pure-button-active" href="logout.php">EXIT</a>&nbsp;&nbsp;&nbsp;
 </div>

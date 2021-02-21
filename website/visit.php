@@ -201,7 +201,7 @@ function startCounting(){
     		timerStart = parseInt(Date.now());
     		// Convert to seconds
 			var timePassed = (timeToSpend - parseInt(timeSpentOnSite/1000));
-			console.log(timePassed);
+			//console.log(timePassed);
 			if(timePassed <= 0){
 				
 				if(flag == 1){  //only send 1 webhook and update text 1 time

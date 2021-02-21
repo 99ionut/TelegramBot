@@ -71,13 +71,49 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 		}
 		
 		.pure-button {
-			font-size: 85%;
+			font-size: 100%;
 		}
 		
 		input {
 			float:right;
 			margin-right:10px;
 		}
+		
+		
+		  .button-success {
+            background: rgb(28, 184, 65);
+			color:white;
+            /* this is a green */
+        }
+
+        .button-error {
+            background: rgb(202, 60, 60);
+			color:white;
+            /* this is a maroon */
+        }
+
+        .button-warning {
+            background: rgb(223, 117, 20);
+			color:white;
+            /* this is an orange */
+        }
+
+        .button-secondary {
+            background: rgb(66, 184, 221);
+			color:white;
+            /* this is a light blue */
+        }
+		
+		.button-purple {
+            background: purple;
+			color:white;
+            /* this is a light blue */
+        }
+		
+		#transactionTable_wrapper{
+			margin-top:20px;
+		}
+
 
 	</style>
 </head>
@@ -110,6 +146,26 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 	} elseif (isset($_POST['txtWebhookRestart'])) {
 		$txtWebhookRestart = $_POST['txtWebhookRestart'];
 		$sql = "UPDATE settings SET webhookRestart = '$txtWebhookRestart'";
+		$result = $mysqli->query($sql);
+		if ($result) {
+			echo '<script language="javascript">';
+			echo 'alert("SETTINGS CHANGED!")';
+			echo '</script>';
+		}
+		
+	} elseif (isset($_POST['txtWebhookWithdraw'])) {
+		$txtWebhookWithdraw = $_POST['txtWebhookWithdraw'];
+		$sql = "UPDATE settings SET webhookWithdraw = '$txtWebhookWithdraw'";
+		$result = $mysqli->query($sql);
+		if ($result) {
+			echo '<script language="javascript">';
+			echo 'alert("SETTINGS CHANGED!")';
+			echo '</script>';
+		}
+		
+	} elseif (isset($_POST['txtWebhookRevoke'])) {
+		$txtWebhookRevoke = $_POST['txtWebhookRevoke'];
+		$sql = "UPDATE settings SET webhookRevoke = '$txtWebhookRevoke'";
 		$result = $mysqli->query($sql);
 		if ($result) {
 			echo '<script language="javascript">';
@@ -203,14 +259,26 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 	?>
 	
 <div class="mt-3 text-center"></div>
-        <div class="card card-login mx-auto mt-3">
-            <div class="card-body">
+       
+          
                 <div class="text-center">
-<a href="earndoge.html"><img style="width:70px" src="images/images-logo.png" alt="EarnDogeToday"></a>
+
                     <h4>SETTINGS</h4>
                     </div>
-            </div>
-        </div>
+            
+     
+		
+				 <div class="text-center">
+
+<a class="pure-button button-success pure-button-active" href="users.php">USERS</a>&nbsp;&nbsp;&nbsp;
+<a class="pure-button button-error pure-button-active" href="ads.php">ADS</a>&nbsp;&nbsp;&nbsp;
+<a class="pure-button button-warning pure-button-active" href="transactions.php">TRANSACTIONS</a>&nbsp;&nbsp;&nbsp;
+<a class="pure-button button-purple pure-button-active" href="withdraws.php">WITHDRAWS</a>&nbsp;&nbsp;&nbsp;
+<a class="pure-button pure-button-primary pure-button-active" href="settings.php">SETTINGS</a>&nbsp;&nbsp;&nbsp;
+<a class="pure-button pure-button-active" href="logout.php">EXIT</a>&nbsp;&nbsp;&nbsp;
+</div>
+	
+	
 		<br><br>
 	<?php
 	$sql = "select * from settings";
@@ -227,12 +295,15 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 				echo "<div><b>BLOCKIO Webhook</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  " . $row['webhook'] . " <form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='webhook' value='CHANGE'>  <input type='text' name='txtWebhook' ></form></div><br> ";
 				echo "<div><b>Website Webhook</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['webhookWebsite'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='webhookWebsite' value='CHANGE'> <input type='text' name='txtWebhookWebsite' ></form></div><br>";
 				echo "<div><b>Restart Webhook</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['webhookRestart'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='webhookRestart' value='CHANGE'> <input type='text' name='txtWebhookRestart' ></form></div><br>";
+				echo "<div><b>Withdraw Webhook</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['webhookWithdraw'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='webhookWithdraw' value='CHANGE'> <input type='text' name='txtWebhookWithdraw' ></form></div><br>";
+				echo "<div><b>Revoke Webhook</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['webhookRevoke'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='webhookRevoke' value='CHANGE'> <input type='text' name='txtWebhookRevoke' ></form></div><br>";
+				
 				
 				echo "<div><b>BLOCKIO Api</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['blockIoApi'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='blockIoApi' value='CHANGE'> <input type='text'  name='txtBlockIoApi' ></form></div><br>";
 				echo "<div><b>BLOCKIO Secret Pin</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['blockIoSecretPin'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='blockIoSecretPin' value='CHANGE'> <input type='text' name='txtBlockIoSecretPin' ></form></div><br>";
 				echo "<div><b>BLOCKIO Version</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['blockIoVersion'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='blockIoVersion' value='CHANGE'> <input type='text' name='txtBlockIoVersion' ></form></div><br>";
 				echo "<div><b>Minimum deposit amount (DOGE)</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['minDepositAmount'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='minDepositAmount' value='CHANGE'> <input type='text' name='txtMinDepositAmount' ></form></div><br>";
-				echo "<div><b>Minimum Withdraw Amount</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['minWithdrawAmount'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='minWithdrawAmount' value='CHANGE'> <input type='text' name='txtMinWithdrawAmount' ></form></div><br>";
+				echo "<div><b>Minimum Withdraw Amount (DOGE)</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['minWithdrawAmount'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='minWithdrawAmount' value='CHANGE'> <input type='text' name='txtMinWithdrawAmount' ></form></div><br>";
 				//echo "<div><b>Telegram Bot Token</b></div> <div>" . $row['botToken'] . "</div>";
 				echo "<div><b>Founds account address</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['mainAccount'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='mainAccount' value='CHANGE'> <input type='text' name='txtMainAccount' ></form></div><br>";
 				echo "<div><b>Owner take (%)</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . $row['ownerTake'] . "<form name='webh' style='float:right' action='settings.php' method='POST'> <input class='pure-button pure-button-primary' type='submit' id='ownerTake' value='CHANGE'> <input type='text' name='txtOwnerTake' ></form></div><br>";
@@ -297,8 +368,6 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 	});
 </script>
 
-<a style="margin-left:50px" class="button-warning pure-button" href=" ./03login.php">BACK</a>
-	
 <a style="float:right; margin-right:50px; background-color:black; color:white" class="button-warning pure-button" href="./restart.php">RESTART BOT</a>
 </body>
 

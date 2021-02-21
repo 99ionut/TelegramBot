@@ -37,7 +37,7 @@ token = str(botToken)
 bot = telebot.TeleBot(token)
 
 app = Flask(__name__)
-mycursor = connector.cursor()
+
 #1) start server.py
 #2) from cmd in telegramBot ngrok http 5000
 #3) create notification from the interactive python block_io doc
@@ -62,6 +62,96 @@ def restart():
     else:
         abort(400)
 
+
+@app.route('/withdraw', methods=['POST'])  #WEBSITE WEBHOOK
+@cross_origin()
+def withdraw():
+    if request.method == 'POST':
+        #get webhook data
+        print("WITHDRAW")
+        try:
+            dati = str(request.form)
+            print(dati)
+        
+            withdrawId = dati.split("\"")[3]
+            print(withdrawId)
+            withdrawUserAddress =  dati.split("\"")[7]
+            print(withdrawUserAddress)
+            withdrawAmount =  dati.split("\"")[11]
+            print(withdrawAmount)
+            withdrawUserPersonalAddress =  dati.split("\"")[15]
+            print(withdrawUserPersonalAddress)
+
+            transactionFee = block_io.get_network_fee_estimate(amounts=withdrawAmount, to_addresses=withdrawUserPersonalAddress)
+            transactionFee = transactionFee['data']['estimated_network_fee']
+            amoutWithoutFee = float(withdrawAmount) - float(transactionFee)
+            block_io.withdraw_from_addresses(amounts=str(amoutWithoutFee), from_addresses= mainAccount , to_addresses=str(withdrawUserPersonalAddress), priority='custom', custom_network_fee= str(transactionFee))
+        
+            #Delete temporary link
+            connector = connect()
+            mycursor = connector.cursor()
+            mycursor.execute("DELETE FROM withdraw WHERE id = \'"+ withdrawId +"\'")
+            print("DELETED Withdraw")
+            connector.commit()
+            mycursor.close()
+            connector.close()
+        
+        except ValueError:
+            print("Withdraw error")
+
+        return 'success', 200       
+    else:
+        abort(400)
+
+@app.route('/revoke', methods=['POST'])  #WEBSITE WEBHOOK
+@cross_origin()
+def revoke():
+    if request.method == 'POST':
+        #get webhook data
+        print("REVOKE")
+
+        try:
+            dati = str(request.form)
+            print(dati)
+
+            revokeId = dati.split("\"")[3]
+            print(revokeId)
+            revokeAmount =  dati.split("\"")[7]
+        
+            print(revokeAmount)
+
+            #get revoked user username
+            connector = connect()
+            mycursor = connector.cursor()
+            mycursor.execute("SELECT username FROM withdraw WHERE id = \'"+ str(revokeId) +"\'")
+            usernameRevoke = mycursor.fetchall()[0][0]
+            mycursor.close()
+            connector.close()
+            print("Username = "+str(usernameRevoke))
+
+
+            #Return user balance
+            connector = connect()
+            mycursor = connector.cursor()
+            mycursor.execute("UPDATE user SET virtualBalance = virtualBalance + "+ str(revokeAmount) +" WHERE username = \'"+ str(usernameRevoke) +"\'")
+            connector.commit()
+            mycursor.close()
+            connector.close()
+
+            #Delete revoke withdraw
+            connector = connect()
+            mycursor = connector.cursor()
+            mycursor.execute("DELETE FROM withdraw WHERE id = \'"+ str(revokeId) +"\'")
+            print("DELETED Withdraw")
+            connector.commit()
+            mycursor.close()
+            connector.close()
+        except ValueError:
+            print("Revoke error")
+
+        return 'success', 200       
+    else:
+        abort(400)
 
 @app.route('/website', methods=['POST'])  #WEBSITE WEBHOOK
 @cross_origin()
@@ -99,9 +189,13 @@ def website():
             print("REFERRAL TAKE % = "+str(referralTake))
 
             ###delete temporary link
-            #mycursor.execute("DELETE FROM link WHERE customLink = \'"+ websiteCustomLink +"\'")
+            connector = connect()
+            mycursor = connector.cursor()
+            mycursor.execute("DELETE FROM link WHERE customLink = \'"+ websiteCustomLink +"\'")
             print("DELETED LINK")
-            #connector.commit()
+            connector.commit()
+            mycursor.close()
+            connector.close()
 
             #get the campaign cpc,dailyBudget,dailyBudgetSpent,username 
             connector = connect()
@@ -144,8 +238,8 @@ def website():
             print("REMOVED LAST AD")
 
             #give the user that has seen the ad money
-            userCpc = websiteAd[0][0]-((websiteAd[0][0]*ownerTake)/100)
-            userCpcDecimals = "{:.4f}".format(userCpc)
+            userCpc = float(websiteAd[0][0])-((float(websiteAd[0][0])*ownerTake)/100)
+            userCpcDecimals = userCpc
             #give the referral user ad money
             connector = connect()
             mycursor = connector.cursor()
@@ -224,21 +318,20 @@ def website():
             connector.close()
             print("INCREASE DAILY BUDGET")
             print("DONE")
-            if(websiteXframe == 1): #send message immedialy if xframe == 1 (so the user already waited on the website)
+            print(str(websiteXframe))
+            if(websiteXframe == "1"): #send message immedialy if xframe == 1 (so the user already waited on the website)
                 bot.send_message(userId, text="You earned "+earningMinusReferral+" DOGE!")
-            else:                   #else wait 10 seconds
-                sendMessage(userId,earningMinusReferral)
+            elif(websiteXframe == "0"):    #else wait 10 seconds
+
+                bot.send_message(userId, text="Please stay on the site for at least 10 seconds...")
+                time.sleep(10)
+                bot.send_message(userId, text="You earned "+earningMinusReferral+" DOGE!")
 
         except Exception as e:
             print(e)
         return 'success', 200       
     else:
         abort(400)
-
-def sendMessage(userId,earningMinusReferral):
-    bot.send_message(userId, text="Please stay on the site for at least 10 seconds...")
-    time.sleep(10)
-    bot.send_message(userId, text="You earned "+earningMinusReferral+" DOGE!")
 
 
 @app.route('/webhook', methods=['POST'])  #BLOCKIO WEBHOOK

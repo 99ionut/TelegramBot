@@ -1190,9 +1190,36 @@ def withdrawAddressAmount(message,address):
             withdrawAddressConfirm(address)
 
 def withdrawAddressSend(message,amount,address,fee):
+    print("amount = "+str(amount.text))
+    print("address = "+str(address.text))
     if(str(message.text)=='❌ Cancel'):
         cancelWithdrawMenu(message) 
     elif(str(message.text)=='✅ Confirm'):
+
+        connector = dbConnector.connect()
+        mycursor = connector.cursor()
+        mycursor.execute("SELECT username, address FROM user WHERE userId = '"+str(message.chat.id)+"'")
+        userInfo = mycursor.fetchall()
+        mycursor.close()
+        connector.close()
+
+        connector = dbConnector.connect()
+        mycursor = connector.cursor()
+        mycursor.execute("UPDATE user SET virtualBalance = virtualBalance - "+str(amount.text)+"  WHERE username = \'" + str(userInfo[0][0]) +'\'')
+        connector.commit()
+        mycursor.close()
+        connector.close()
+
+        sql = """INSERT INTO withdraw (username, userAddress, amount, userPersonalAddress) VALUES (%s, %s, %s, %s)"""
+        val = (str(userInfo[0][0]), str(userInfo[0][1]), str(amount.text), str(address.text))
+        connector = dbConnector.connect()
+        mycursor = connector.cursor()
+        mycursor.execute(sql, val)
+        connector.commit()
+        mycursor.close()
+        connector.close()
+        print("withdraw requested")
+
         keyboard = telebot.types.ReplyKeyboardMarkup(True)
         keyboard.row('➕ Deposit', '💵 Withdraw')
         keyboard.add('💰 Balance', '🕑 History')

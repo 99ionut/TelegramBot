@@ -70,8 +70,7 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 			background-color:white!important;
 		}
 		
-		
-        .button-success {
+		  .button-success {
             background: rgb(28, 184, 65);
 			color:white;
             /* this is a green */
@@ -105,6 +104,7 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 			margin-top:20px;
 		}
 
+
 	</style>
 </head>
 
@@ -121,30 +121,18 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 	}
 	?>
 
-<script type="text/javascript">
-	function removeAd(id) {
-		var txt;
-		var r = confirm("Are you sure you want to remove this ad?");
-		if (r == true) {
-			txt = "You pressed OK!";
-			console.log(txt);
-			console.log(id);
-			window.location.href="./ads.php?remove="+id;
-		} else {
-			txt = "You pressed Cancel!";
-			console.log(txt);
-		}	
-	}
-</script>
 
 <div class="mt-3 text-center"></div>
+      
        
                 <div class="text-center">
-                    <h4>AD CAMPAIGNS</h4>
-                    </div>
 
-           
-   
+                    <h4>WITHDRAWS</h4>
+                    </div>
+         
+  
+		
+		
 		 <div class="text-center">
 
 <a class="pure-button button-success pure-button-active" href="users.php">USERS</a>&nbsp;&nbsp;&nbsp;
@@ -155,9 +143,25 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 <a class="pure-button pure-button-active" href="logout.php">EXIT</a>&nbsp;&nbsp;&nbsp;
 </div>
 	
-		
+
 	<?php
-	$sql = "select * from adcampaign";
+	 //get webhook
+    $webhook = "";
+	$webhookRevoke = "";
+	$sql = "select webhookWithdraw, webhookRevoke from settings";
+	$result = $mysqli->query($sql);
+	if ($result) {
+		if ($result->num_rows > 0) {
+			while ($row = $result->fetch_array()) {
+				$webhook = $row['webhookWithdraw'];
+				$webhookRevoke = $row['webhookRevoke'];
+			}
+		}
+	}
+	
+	
+	//get withdraws
+	$sql = "select * from withdraw";
 
 	//echo "<pre> " . $sql . "</pre>";
 	$result = $mysqli->query($sql);
@@ -168,21 +172,13 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 		echo "<thead>";
         echo "<tr>";
             echo "<th>id</th>";
-            echo "<th>title</th>";
-			echo "<th>description</th>";
-			echo "<th>nsfw</th>";
-			echo "<th>clicks</th>";
-			echo "<th>cpc</th>";
-			echo "<th>daily budget</th>";
-			echo "<th>status</th>";
-			echo "<th>url</th>";
-			echo "<th>user</th>";
-			echo "<th>country</th>";
-			echo "<th>seconds</th>";
-			echo "<th>date</th>";
-			echo "<th>speed</th>";
-			echo "<th>reports</th>";
-			echo "<th>remove</th>";
+            echo "<th>date</th>";
+			echo "<th>username</th>";
+			echo "<th>userAddress</th>";
+			echo "<th>amount</th>";
+			echo "<th>userPersonalAddress</th>";
+			echo "<th> </th>";
+			echo "<th> </th>";
 			
         echo "</tr>";
 		echo "</thead>";
@@ -190,22 +186,14 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 	if ($result->num_rows > 0) {
 			echo "<tr>";
 			while ($row = $result->fetch_array()) {
-				echo "<td>" . $row['campaignId'] . "</td> ";
-				echo "<td>" . $row['title'] . "</td>";
-				echo "<td>" . $row['description'] . "</td>";
-				echo "<td>" . $row['nsfw'] . "</td>";
-				echo "<td>" . $row['clicks'] . "</td>";
-				echo "<td>" . $row['cpc'] . "</td>";
-				echo "<td>" . $row['dailyBudget'] . "</td>";
-				echo "<td>" . $row['status'] . "</td>";
-				echo "<td>" . $row['url'] . "</td>";
+				echo "<td>" . $row['id'] . "</td> ";
+				echo "<td>" . $row['date'] . "</td>";
 				echo "<td>" . $row['username'] . "</td>";
-				echo "<td>" . $row['country'] . "</td>";
-				echo "<td>" . $row['seconds'] . "</td>";
-				echo "<td>" . $row['dateAdded'] . "</td>";
-				echo "<td>" . $row['speed'] . "</td>";
-				echo "<td>" . $row['reports'] . "</td>";
-				echo "<td> <a class='button-error pure-button' onclick='removeAd(".$row['campaignId'].")'>Remove</a></td>";
+				echo "<td>" . $row['userAddress'] . "</td>";
+				echo "<td>" . $row['amount'] . "</td>";
+				echo "<td>" . $row['userPersonalAddress'] . "</td>";
+				echo "<td> <a class='button-success pure-button' onclick=\"approveWithdraw('".$row['id']."','". $row['userAddress'] ."','". $row['amount'] ."','". $row['userPersonalAddress'] ."')\"> Approve </a> </td>";
+				echo "<td> <a class='button-error pure-button' onclick=\"revokeWithdraw('".$row['id']."','". $row['amount'] ."')\"> Revoke </a></td>";
 				echo "</tr>";
 			}
 		} else "nessun dato";
@@ -214,11 +202,58 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 	echo "</tbody>";
 	echo "</table>";
 	?>	
-	
+
 <script type="text/javascript">
+	function revokeWithdraw(id,amount) {
+		var txt;
+		var r = confirm("Are you sure you want to revoke this withdraw?");
+		if (r == true) {
+			var url = "<?php echo $webhookRevoke; ?>";
+			txt = "You pressed OK!";
+			console.log(txt);
+			console.log(id);
+			
+			var row_data = JSON.stringify({"id": id,"amount":amount});
+			$.post(""+url+"", row_data);
+			
+			for(var i = 0; i<300; i++){
+						console.log("waiting");
+						}
+						
+			window.location.href="./withdraws.php?revoke="+id;
+		} else {
+			txt = "You pressed Cancel!";
+			console.log(txt);
+		}	
+	}
+	
+	function approveWithdraw(id,userAddress,amount,userPersonalAddress) {
+		var txt;
+		var r = confirm("Are you sure you want to approve this withdraw?");
+		if (r == true) {
+			var url = "<?php echo $webhook; ?>";
+			txt = "You pressed OK!";
+			console.log(txt);
+			console.log(id);
+			
+			var row_data = JSON.stringify({"id": id,"userAddress": userAddress,"amount":amount,"userPersonalAddress":userPersonalAddress});
+			$.post(""+url+"", row_data);
+			
+			for(var i = 0; i<300; i++){
+						console.log("waiting");
+						}
+		
+			window.location.href="./withdraws.php?approve="+id;
+		} else {
+			txt = "You pressed Cancel!";
+			console.log(txt);
+		}	
+	}
+
+
 $(document).ready( function () {
     $('#transactionTable').DataTable({
-        "order": [[ 5, "desc" ]]
+        "order": [[ 1, "desc" ]]
     });
 	
 } );

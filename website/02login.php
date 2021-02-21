@@ -70,7 +70,7 @@ session_start();
 					
 					$_SESSION['login'] = 'ok';
 
-					header('Location: 03login.php');
+					header('Location: users.php');
 
 				} else {
 					header('Location: 01login.php?errore=password');

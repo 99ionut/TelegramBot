@@ -69,6 +69,42 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 		.dataTables_wrapper .dataTables_filter input {
 			background-color:white!important;
 		}
+		
+		
+		  .button-success {
+            background: rgb(28, 184, 65);
+			color:white;
+            /* this is a green */
+        }
+
+        .button-error {
+            background: rgb(202, 60, 60);
+			color:white;
+            /* this is a maroon */
+        }
+
+        .button-warning {
+            background: rgb(223, 117, 20);
+			color:white;
+            /* this is an orange */
+        }
+
+        .button-secondary {
+            background: rgb(66, 184, 221);
+			color:white;
+            /* this is a light blue */
+        }
+		
+		.button-purple {
+            background: purple;
+			color:white;
+            /* this is a light blue */
+        }
+		
+		#transactionTable_wrapper{
+			margin-top:20px;
+		}
+
 
 	</style>
 </head>
@@ -79,15 +115,27 @@ if (isset($_SESSION['login']) && $_SESSION['login'] == 'ok') {
 	?>
 	
 <div class="mt-3 text-center"></div>
-        <div class="card card-login mx-auto mt-3">
-            <div class="card-body">
+        
+          
                 <div class="text-center">
-<a href="earndoge.html"><img style="width:70px" src="images/images-logo.png" alt="EarnDogeToday"></a>
+
                     <h4>TRANSACTIONS</h4>
                     </div>
-            </div>
-        </div>
+         
+      
 		
+		
+		 <div class="text-center">
+
+<a class="pure-button button-success pure-button-active" href="users.php">USERS</a>&nbsp;&nbsp;&nbsp;
+<a class="pure-button button-error pure-button-active" href="ads.php">ADS</a>&nbsp;&nbsp;&nbsp;
+<a class="pure-button button-warning pure-button-active" href="transactions.php">TRANSACTIONS</a>&nbsp;&nbsp;&nbsp;
+<a class="pure-button button-purple pure-button-active" href="withdraws.php">WITHDRAWS</a>&nbsp;&nbsp;&nbsp;
+<a class="pure-button pure-button-primary pure-button-active" href="settings.php">SETTINGS</a>&nbsp;&nbsp;&nbsp;
+<a class="pure-button pure-button-active" href="logout.php">EXIT</a>&nbsp;&nbsp;&nbsp;
+</div>
+	
+	
 	<?php
 	$sql = "select * from transaction";
 
@@ -134,8 +182,6 @@ $(document).ready( function () {
 } );
 </script>
 
-<a style="margin-left:50px" class="button-warning pure-button" href=" ./03login.php">BACK</a>
-	
 
 </body>
 
